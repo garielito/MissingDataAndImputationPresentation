@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Presentation - Missing Data and Imputation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">Presentation</span>
+  </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html">Home</a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./about.html">About</a>
+  </li>  
+</ul>
+              <div id="quarto-search" class="" title="Search"></div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#problem-statement" id="toc-problem-statement" class="nav-link" data-scroll-target="#problem-statement">Problem Statement</a></li>
+  <li><a href="#types-of-missing-data" id="toc-types-of-missing-data" class="nav-link" data-scroll-target="#types-of-missing-data">Types of Missing Data</a></li>
+  <li><a href="#solutions-for-missing-data-types" id="toc-solutions-for-missing-data-types" class="nav-link" data-scroll-target="#solutions-for-missing-data-types">Solutions for Missing Data Types</a></li>
+  <li><a href="#terminology" id="toc-terminology" class="nav-link" data-scroll-target="#terminology">Terminology</a></li>
+  <li><a href="#dataset" id="toc-dataset" class="nav-link" data-scroll-target="#dataset">Dataset</a></li>
+  <li><a href="#visualization-of-dataset" id="toc-visualization-of-dataset" class="nav-link" data-scroll-target="#visualization-of-dataset">Visualization of Dataset</a></li>
+  <li><a href="#generating-missing-data" id="toc-generating-missing-data" class="nav-link" data-scroll-target="#generating-missing-data">Generating Missing Data</a></li>
+  <li><a href="#visualization-of-missing-data-mcar" id="toc-visualization-of-missing-data-mcar" class="nav-link" data-scroll-target="#visualization-of-missing-data-mcar">Visualization of Missing Data (MCAR)</a></li>
+  <li><a href="#visualization-of-missing-data-mar" id="toc-visualization-of-missing-data-mar" class="nav-link" data-scroll-target="#visualization-of-missing-data-mar">Visualization of Missing Data (MAR)</a></li>
+  <li><a href="#visualization-of-missing-data-mnar" id="toc-visualization-of-missing-data-mnar" class="nav-link" data-scroll-target="#visualization-of-missing-data-mnar">Visualization of Missing Data (MNAR)</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a></li>
+  <li><a href="#percent-error-calculation" id="toc-percent-error-calculation" class="nav-link" data-scroll-target="#percent-error-calculation">Percent Error Calculation</a></li>
+  <li><a href="#single-imputation" id="toc-single-imputation" class="nav-link" data-scroll-target="#single-imputation">Single Imputation</a>
+  <ul class="collapse">
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#outcome" id="toc-outcome" class="nav-link" data-scroll-target="#outcome">Outcome</a></li>
+  </ul></li>
+  <li><a href="#visualization-of-single-imputation-error" id="toc-visualization-of-single-imputation-error" class="nav-link" data-scroll-target="#visualization-of-single-imputation-error">Visualization of Single Imputation Error</a></li>
+  <li><a href="#knn-imputation" id="toc-knn-imputation" class="nav-link" data-scroll-target="#knn-imputation">kNN Imputation</a>
+  <ul class="collapse">
+  <li><a href="#overview-1" id="toc-overview-1" class="nav-link" data-scroll-target="#overview-1">Overview</a></li>
+  <li><a href="#outcome-1" id="toc-outcome-1" class="nav-link" data-scroll-target="#outcome-1">Outcome</a></li>
+  </ul></li>
+  <li><a href="#visualization-knn-imputation-error" id="toc-visualization-knn-imputation-error" class="nav-link" data-scroll-target="#visualization-knn-imputation-error">Visualization kNN Imputation Error</a></li>
+  <li><a href="#random-forest-imputation" id="toc-random-forest-imputation" class="nav-link" data-scroll-target="#random-forest-imputation">Random Forest Imputation</a>
+  <ul class="collapse">
+  <li><a href="#overview-2" id="toc-overview-2" class="nav-link" data-scroll-target="#overview-2">Overview</a></li>
+  <li><a href="#outcome-2" id="toc-outcome-2" class="nav-link" data-scroll-target="#outcome-2">Outcome</a></li>
+  </ul></li>
+  <li><a href="#visualization-random-forest-imputation-error" id="toc-visualization-random-forest-imputation-error" class="nav-link" data-scroll-target="#visualization-random-forest-imputation-error">Visualization Random Forest Imputation Error</a></li>
+  <li><a href="#mice-imputation" id="toc-mice-imputation" class="nav-link" data-scroll-target="#mice-imputation">MICE Imputation</a>
+  <ul class="collapse">
+  <li><a href="#overview-3" id="toc-overview-3" class="nav-link" data-scroll-target="#overview-3">Overview</a></li>
+  <li><a href="#outcome-3" id="toc-outcome-3" class="nav-link" data-scroll-target="#outcome-3">Outcome</a></li>
+  </ul></li>
+  <li><a href="#visualization-mice-imputation-error" id="toc-visualization-mice-imputation-error" class="nav-link" data-scroll-target="#visualization-mice-imputation-error">Visualization Mice Imputation Error</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#overview-errors" id="toc-overview-errors" class="nav-link" data-scroll-target="#overview-errors">Overview Errors</a></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a></li>
+  <li><a href="#error-comparison-for-types-of-missing-data" id="toc-error-comparison-for-types-of-missing-data" class="nav-link" data-scroll-target="#error-comparison-for-types-of-missing-data">Error Comparison for Types of Missing Data</a></li>
+  <li><a href="#conclusions-1" id="toc-conclusions-1" class="nav-link" data-scroll-target="#conclusions-1">Conclusions</a></li>
+  <li><a href="#error-comparison-for-types-of-variables" id="toc-error-comparison-for-types-of-variables" class="nav-link" data-scroll-target="#error-comparison-for-types-of-variables">Error Comparison for Types of Variables</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#questions" id="toc-questions" class="nav-link" data-scroll-target="#questions">Questions?</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Missing Data and Imputation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Data is becoming more integrated into our society and decision-making process. The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. Real world data is usually incomplete with missing data.</p>
+</section>
+<section id="problem-statement" class="level2">
+<h2 class="anchored" data-anchor-id="problem-statement">Problem Statement</h2>
+<p>Original solutions such as listwise deletion or univariate imputation of the mean create bais and inaccurate results. Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods.</p>
+</section>
+<section id="types-of-missing-data" class="level2">
+<h2 class="anchored" data-anchor-id="types-of-missing-data">Types of Missing Data</h2>
+<ul>
+<li><p><strong>MCAR (Missing Completely at Random)</strong> is the data missing where data points are not related to each other and probability of missing data is equal for every data point.</p></li>
+<li><p><strong>MAR (Missing at Random)</strong> is the likelihood of a value to be missing depends on other observed variables.</p></li>
+<li><p><strong>MNAR (Missing Not at Random)</strong> is unequal and unknown probability to be missing for a dataset.</p></li>
+</ul>
+</section>
+<section id="solutions-for-missing-data-types" class="level2">
+<h2 class="anchored" data-anchor-id="solutions-for-missing-data-types">Solutions for Missing Data Types</h2>
+<ul>
+<li><p><strong>MCAR (Missing Completely at Random)</strong> is unbiased missing data and allows methods such as complete case analysis, single, and multiple imputation for valid analysis.</p></li>
+<li><p><strong>MAR (Missing at Random)</strong> is missing data values that have dependency on other observed variables. For this data type we can use multiple imputation.</p></li>
+<li><p><strong>MNAR (Missing Not at Random)</strong> data is missing and we are unaware of this missing data type. For this data type, sensitivity analysis is preferred.</p></li>
+</ul>
+</section>
+<section id="terminology" class="level2">
+<h2 class="anchored" data-anchor-id="terminology">Terminology</h2>
+<ul>
+<li><p><strong>Imputation</strong> Process of replacing a missing value with another value.</p></li>
+<li><p><strong>Complete Cases (Listwise Deletion)</strong> Only use complete observations in analysis. If an observation is missing data, delete the observation.</p></li>
+<li><p><strong>Univariate Imputation</strong> is single variable imputation. Depending on variable type mean, median, frequency imputations are used.</p></li>
+<li><p><strong>Ampute</strong> the ampute() function generates multivariate missing data under a MCAR, MAR, or MNAR missing data mechanism.</p></li>
+</ul>
+</section>
+<section id="dataset" class="level2">
+<h2 class="anchored" data-anchor-id="dataset">Dataset</h2>
+<ul>
+<li><p>Found on Kaggle and produced by data from Glassdoor.</p></li>
+<li><p>Focuses on compensation data between men and women.</p></li>
+<li><p>Was constructed in efforts to aid testing the pay gap between men and women.</p></li>
+<li><p>Has 9 variables with 1000 observations.</p>
+<ul>
+<li>Variables: Job Title, Gender, Age, Performance Evaluation, Education, Department, Seniority, Base Pay, Bonus</li>
+</ul></li>
+</ul>
+</section>
+<section id="visualization-of-dataset" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-dataset">Visualization of Dataset</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="generating-missing-data" class="level2">
+<h2 class="anchored" data-anchor-id="generating-missing-data">Generating Missing Data</h2>
+<ul>
+<li><p>In order to generate missing variables for each of the types, we used the ampute function from the mice package.</p></li>
+<li><p>For each missing type, 20% of the data set was turned into NA values with respect to it’s type.</p></li>
+</ul>
+</section>
+<section id="visualization-of-missing-data-mcar" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-missing-data-mcar">Visualization of Missing Data (MCAR)</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="visualization-of-missing-data-mar" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-missing-data-mar">Visualization of Missing Data (MAR)</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="visualization-of-missing-data-mnar" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-missing-data-mnar">Visualization of Missing Data (MNAR)</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<ul>
+<li><p><strong>Single Imputation</strong> replacing a missing value with a single value usually in the form of a single variables mean, median, for frequency.</p></li>
+<li><p><strong>kNN Imputation</strong> makes predictions about missing values by finding the K’s closest neighbors and impute the value based on the neighborhood.</p></li>
+<li><p><strong>Random Forest Imputation</strong> an iterative imputation method based on a random forest allows quality and flexibility utilizing built-in out-of-bag error estimates.</p></li>
+<li><p><strong>MICE Imputation</strong> involves filling the missing values multiple times until a certain threshold is met.</p></li>
+</ul>
+</section>
+<section id="percent-error-calculation" class="level2">
+<h2 class="anchored" data-anchor-id="percent-error-calculation">Percent Error Calculation</h2>
+<ul>
+<li>The calculation being used to produce Error is:</li>
+</ul>
+<p><span class="math inline">\(Error = \frac{|Theoretical-Experimental|}{Experimental}*100\)</span></p>
+</section>
+<section id="single-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="single-imputation">Single Imputation</h2>
+<section id="overview" class="level3">
+<h3 class="anchored" data-anchor-id="overview">Overview</h3>
+<ul>
+<li><p>Replaces missing values with mean, median or most frequent value within the variable depending on the type</p>
+<pre><code>i) Continuous Variables: Mean, Median
+
+ii) Categorical Variables: Most Frequent</code></pre></li>
+</ul>
+</section>
+<section id="outcome" class="level3">
+<h3 class="anchored" data-anchor-id="outcome">Outcome</h3>
+<ul>
+<li><p>Very easy and fast to compute</p></li>
+<li><p>Does not factor correlation between variables and can introduce bias to the data set.</p></li>
+</ul>
+</section>
+</section>
+<section id="visualization-of-single-imputation-error" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-of-single-imputation-error">Visualization of Single Imputation Error</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="knn-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="knn-imputation">kNN Imputation</h2>
+<section id="overview-1" class="level3">
+<h3 class="anchored" data-anchor-id="overview-1">Overview</h3>
+<ul>
+<li><p>Algorithm creates a basic mean impute to construct a KDTree, which finds the nearest neighbor and then finds the average of KNN’s</p></li>
+<li><p>Find the kth closest neighbor and imputes based on that value.</p></li>
+</ul>
+</section>
+<section id="outcome-1" class="level3">
+<h3 class="anchored" data-anchor-id="outcome-1">Outcome</h3>
+<ul>
+<li><p>Has an advantage of being more accurate.</p></li>
+<li><p>Computationally expensive and is very sensitive to outliers.</p></li>
+</ul>
+</section>
+</section>
+<section id="visualization-knn-imputation-error" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-knn-imputation-error">Visualization kNN Imputation Error</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="random-forest-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="random-forest-imputation">Random Forest Imputation</h2>
+<section id="overview-2" class="level3">
+<h3 class="anchored" data-anchor-id="overview-2">Overview</h3>
+<ul>
+<li><p>An iterative imputation method based on random forest.</p></li>
+<li><p>Allows quality and flexibility utilizing built-in out-of-bag error estimates</p></li>
+<li><p>Can be used on mixed types of data with ability to account for high-dimensions and different types of variables simultaneously.</p></li>
+</ul>
+</section>
+<section id="outcome-2" class="level3">
+<h3 class="anchored" data-anchor-id="outcome-2">Outcome</h3>
+<ul>
+<li><p>Flexible and accounts for mixed variables.</p></li>
+<li><p>Computationally expensive, especially with sufficiently small data sets which may be unnecessary.</p></li>
+</ul>
+</section>
+</section>
+<section id="visualization-random-forest-imputation-error" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-random-forest-imputation-error">Visualization Random Forest Imputation Error</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="mice-imputation" class="level2">
+<h2 class="anchored" data-anchor-id="mice-imputation">MICE Imputation</h2>
+<section id="overview-3" class="level3">
+<h3 class="anchored" data-anchor-id="overview-3">Overview</h3>
+<ul>
+<li><p>Fills values multiple times until a threshold is met.</p></li>
+<li><p>Assumes missing values are MAR (Missing at Random)</p></li>
+<li><p>Uses different models depending on type of variable. Ex:</p>
+<pre><code>  i) Linear Regression for continuous variables.
+
+  ii) Logistic Regression for categorical variables.</code></pre></li>
+</ul>
+</section>
+<section id="outcome-3" class="level3">
+<h3 class="anchored" data-anchor-id="outcome-3">Outcome</h3>
+<ul>
+<li><p>Unbiased estimates which provides more validity.</p></li>
+<li><p>Does not have the same theoretical justification as other techniques.</p></li>
+<li><p>Could result in bias if missing values are not MAR (Missing at Random).</p></li>
+</ul>
+</section>
+</section>
+<section id="visualization-mice-imputation-error" class="level2">
+<h2 class="anchored" data-anchor-id="visualization-mice-imputation-error">Visualization Mice Imputation Error</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="overview-errors" class="level2">
+<h2 class="anchored" data-anchor-id="overview-errors">Overview Errors</h2>
+<ul>
+<li><p>Continuous variables have less overall error than categorical variables.</p></li>
+<li><p>Single Imputation is the worst performing method of imputation.</p></li>
+<li><p>MICE is the best performing method of imputation when compared to kNN and RF imputation in our analysis.</p></li>
+<li><p>kNN and RF had similar performance during evaluation however, RF had less error across the various types of variables.</p></li>
+</ul>
+</section>
+<section id="conclusions" class="level2">
+<h2 class="anchored" data-anchor-id="conclusions">Conclusions</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="error-comparison-for-types-of-missing-data" class="level2">
+<h2 class="anchored" data-anchor-id="error-comparison-for-types-of-missing-data">Error Comparison for Types of Missing Data</h2>
+<ul>
+<li>The expectation was for the MAR type of missing data to be the best performer in terms of least amount of error percent however, because of the smaller size of our data set, it is not as effective as it would be for a larger data set.</li>
+<li>Given a larger data set the differences between our missing data types is more easily compared. The methods of imputation are designed for MAR type of missing data.</li>
+<li>MCAR missing type of data is somewhat unrealistic because you would be omitting variables without relationships to the result.</li>
+</ul>
+</section>
+<section id="conclusions-1" class="level2">
+<h2 class="anchored" data-anchor-id="conclusions-1">Conclusions</h2>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Missing-Data-Presentation_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</section>
+<section id="error-comparison-for-types-of-variables" class="level2">
+<h2 class="anchored" data-anchor-id="error-comparison-for-types-of-variables">Error Comparison for Types of Variables</h2>
+<ul>
+<li>Comparisons above showcase the imputation types with respect to variable types.</li>
+<li>Upper limit of errors for continuous variables is 40%, binary categorical variables is 60%, multinomial categorical variables is 100%, and ordinal categorical variables is 95%.</li>
+<li>Categorical variables error is higher because variability is based on frequency of occurrence in our data.</li>
+<li>Within larger datasets this error will drop because each miss classification has less impact on total error assuming the missing data type is MAR.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li><p>[1] Papageorgiou, G., Grant, S. W., Takkenberg, J. J. M., &amp; Mokhles, M. M. (2018). Statistical primer: How to deal with missing data in scientific research?. Interactive CardioVascular And Thoracic Surgery, 27(2), 153--158. <a href="https://doi.org/10.1093/icvts/ivy102" class="uri">https://doi.org/10.1093/icvts/ivy102</a></p></li>
+<li><p>[2] Azur, M. J., Stuart, E. A., Frangakis, C., &amp; Leaf, P. J. (2011). Multiple imputation by chained equations: what is it and how does it work?. International journal of methods in psychiatric research, 20(1), 40--49. <a href="https://doi.org/10.1002/mpr.329" class="uri">https://doi.org/10.1002/mpr.329</a></p></li>
+<li><p>[3] Badr, W. (2019). Retrieved from 6 Different Ways to Compensate for Missing Values In a Dataset (Data Imputation with examples). Towards Data Science. <a href="https://towardsdatascience.com/6-different-ways-to-compensate-for-missing-values-data-imputation-with-examples-6022d9ca0779" class="uri">https://towardsdatascience.com/6-different-ways-to-compensate-for-missing-values-data-imputation-with-examples-6022d9ca0779</a></p></li>
+<li><p>[4] Obadia, Y. (2017). The use of KNN for missing values. Towards Data Science. <a href="https://towardsdatascience.com/the-use-of-knn-for-missing-values-cf33d935c637" class="uri">https://towardsdatascience.com/the-use-of-knn-for-missing-values-cf33d935c637</a></p></li>
+<li><p>[5] Zhang, Z. (2016). Missing data imputation: Focusing on single imputation. Annals of translational medicine, 4(1). <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4716933/" class="uri">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4716933/</a></p></li>
+</ul>
+</section>
+<section id="questions" class="level2">
+<h2 class="anchored" data-anchor-id="questions">Questions?</h2>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
