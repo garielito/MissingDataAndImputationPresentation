@@ -1,0 +1,205 @@
+[
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "Missing Data and Imputation",
+    "section": "Introduction",
+    "text": "Introduction\nData is becoming more integrated into our society and decision-making process. The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. Real world data is usually incomplete with missing data."
+  },
+  {
+    "objectID": "index.html#problem-statement",
+    "href": "index.html#problem-statement",
+    "title": "Missing Data and Imputation",
+    "section": "Problem Statement",
+    "text": "Problem Statement\nOriginal solutions such as listwise deletion or univariate imputation of the mean create bais and inaccurate results. Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods."
+  },
+  {
+    "objectID": "index.html#types-of-missing-data",
+    "href": "index.html#types-of-missing-data",
+    "title": "Missing Data and Imputation",
+    "section": "Types of Missing Data",
+    "text": "Types of Missing Data\n\nMCAR (Missing Completely at Random) is the data missing where data points are not related to each other and probability of missing data is equal for every data point.\nMAR (Missing at Random) is the likelihood of a value to be missing depends on other observed variables.\nMNAR (Missing Not at Random) is unequal and unknown probability to be missing for a dataset."
+  },
+  {
+    "objectID": "index.html#solutions-for-missing-data-types",
+    "href": "index.html#solutions-for-missing-data-types",
+    "title": "Missing Data and Imputation",
+    "section": "Solutions for Missing Data Types",
+    "text": "Solutions for Missing Data Types\n\nMCAR (Missing Completely at Random) is unbiased missing data and allows methods such as complete case analysis, single, and multiple imputation for valid analysis.\nMAR (Missing at Random) is missing data values that have dependency on other observed variables. For this data type we can use multiple imputation.\nMNAR (Missing Not at Random) data is missing and we are unaware of this missing data type. For this data type, sensitivity analysis is preferred."
+  },
+  {
+    "objectID": "index.html#terminology",
+    "href": "index.html#terminology",
+    "title": "Missing Data and Imputation",
+    "section": "Terminology",
+    "text": "Terminology\n\nImputation Process of replacing a missing value with another value.\nComplete Cases (Listwise Deletion) Only use complete observations in analysis. If an observation is missing data, delete the observation.\nUnivariate Imputation is single variable imputation. Depending on variable type mean, median, frequency imputations are used.\nAmpute the ampute() function generates multivariate missing data under a MCAR, MAR, or MNAR missing data mechanism."
+  },
+  {
+    "objectID": "index.html#dataset",
+    "href": "index.html#dataset",
+    "title": "Missing Data and Imputation",
+    "section": "Dataset",
+    "text": "Dataset\n\nFound on Kaggle and produced by data from Glassdoor.\nFocuses on compensation data between men and women.\nWas constructed in efforts to aid testing the pay gap between men and women.\nHas 9 variables with 1000 observations.\n\nVariables: Job Title, Gender, Age, Performance Evaluation, Education, Department, Seniority, Base Pay, Bonus"
+  },
+  {
+    "objectID": "index.html#visualization-of-dataset",
+    "href": "index.html#visualization-of-dataset",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization of Dataset",
+    "text": "Visualization of Dataset"
+  },
+  {
+    "objectID": "index.html#generating-missing-data",
+    "href": "index.html#generating-missing-data",
+    "title": "Missing Data and Imputation",
+    "section": "Generating Missing Data",
+    "text": "Generating Missing Data\n\nIn order to generate missing variables for each of the types, we used the ampute function from the mice package.\nFor each missing type, 20% of the data set was turned into NA values with respect to it’s type."
+  },
+  {
+    "objectID": "index.html#visualization-of-missing-data-mcar",
+    "href": "index.html#visualization-of-missing-data-mcar",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization of Missing Data (MCAR)",
+    "text": "Visualization of Missing Data (MCAR)"
+  },
+  {
+    "objectID": "index.html#visualization-of-missing-data-mar",
+    "href": "index.html#visualization-of-missing-data-mar",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization of Missing Data (MAR)",
+    "text": "Visualization of Missing Data (MAR)"
+  },
+  {
+    "objectID": "index.html#visualization-of-missing-data-mnar",
+    "href": "index.html#visualization-of-missing-data-mnar",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization of Missing Data (MNAR)",
+    "text": "Visualization of Missing Data (MNAR)"
+  },
+  {
+    "objectID": "index.html#methods",
+    "href": "index.html#methods",
+    "title": "Missing Data and Imputation",
+    "section": "Methods",
+    "text": "Methods\n\nSingle Imputation replacing a missing value with a single value usually in the form of a single variables mean, median, for frequency.\nkNN Imputation makes predictions about missing values by finding the K’s closest neighbors and impute the value based on the neighborhood.\nRandom Forest Imputation an iterative imputation method based on a random forest allows quality and flexibility utilizing built-in out-of-bag error estimates.\nMICE Imputation involves filling the missing values multiple times until a certain threshold is met."
+  },
+  {
+    "objectID": "index.html#percent-error-calculation",
+    "href": "index.html#percent-error-calculation",
+    "title": "Missing Data and Imputation",
+    "section": "Percent Error Calculation",
+    "text": "Percent Error Calculation\n\nThe calculation being used to produce Error is:\n\n\\(Error = \\frac{|Theoretical-Experimental|}{Experimental}*100\\)"
+  },
+  {
+    "objectID": "index.html#single-imputation",
+    "href": "index.html#single-imputation",
+    "title": "Missing Data and Imputation",
+    "section": "Single Imputation",
+    "text": "Single Imputation\nOverview\n\nReplaces missing values with mean, median or most frequent value within the variable depending on the type\ni) Continuous Variables: Mean, Median\n\nii) Categorical Variables: Most Frequent\n\nOutcome\n\nVery easy and fast to compute\nDoes not factor correlation between variables and can introduce bias to the data set."
+  },
+  {
+    "objectID": "index.html#visualization-of-single-imputation-error",
+    "href": "index.html#visualization-of-single-imputation-error",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization of Single Imputation Error",
+    "text": "Visualization of Single Imputation Error"
+  },
+  {
+    "objectID": "index.html#knn-imputation",
+    "href": "index.html#knn-imputation",
+    "title": "Missing Data and Imputation",
+    "section": "kNN Imputation",
+    "text": "kNN Imputation\nOverview\n\nAlgorithm creates a basic mean impute to construct a KDTree, which finds the nearest neighbor and then finds the average of KNN’s\nFind the kth closest neighbor and imputes based on that value.\n\nOutcome\n\nHas an advantage of being more accurate.\nComputationally expensive and is very sensitive to outliers."
+  },
+  {
+    "objectID": "index.html#visualization-knn-imputation-error",
+    "href": "index.html#visualization-knn-imputation-error",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization kNN Imputation Error",
+    "text": "Visualization kNN Imputation Error"
+  },
+  {
+    "objectID": "index.html#random-forest-imputation",
+    "href": "index.html#random-forest-imputation",
+    "title": "Missing Data and Imputation",
+    "section": "Random Forest Imputation",
+    "text": "Random Forest Imputation\nOverview\n\nAn iterative imputation method based on random forest.\nAllows quality and flexibility utilizing built-in out-of-bag error estimates\nCan be used on mixed types of data with ability to account for high-dimensions and different types of variables simultaneously.\n\nOutcome\n\nFlexible and accounts for mixed variables.\nComputationally expensive, especially with sufficiently small data sets which may be unnecessary."
+  },
+  {
+    "objectID": "index.html#visualization-random-forest-imputation-error",
+    "href": "index.html#visualization-random-forest-imputation-error",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization Random Forest Imputation Error",
+    "text": "Visualization Random Forest Imputation Error"
+  },
+  {
+    "objectID": "index.html#mice-imputation",
+    "href": "index.html#mice-imputation",
+    "title": "Missing Data and Imputation",
+    "section": "MICE Imputation",
+    "text": "MICE Imputation\nOverview\n\nFills values multiple times until a threshold is met.\nAssumes missing values are MAR (Missing at Random)\nUses different models depending on type of variable. Ex:\n  i) Linear Regression for continuous variables.\n\n  ii) Logistic Regression for categorical variables.\n\nOutcome\n\nUnbiased estimates which provides more validity.\nDoes not have the same theoretical justification as other techniques.\nCould result in bias if missing values are not MAR (Missing at Random)."
+  },
+  {
+    "objectID": "index.html#visualization-mice-imputation-error",
+    "href": "index.html#visualization-mice-imputation-error",
+    "title": "Missing Data and Imputation",
+    "section": "Visualization Mice Imputation Error",
+    "text": "Visualization Mice Imputation Error"
+  },
+  {
+    "objectID": "index.html#results",
+    "href": "index.html#results",
+    "title": "Missing Data and Imputation",
+    "section": "Results",
+    "text": "Results"
+  },
+  {
+    "objectID": "index.html#overview-errors",
+    "href": "index.html#overview-errors",
+    "title": "Missing Data and Imputation",
+    "section": "Overview Errors",
+    "text": "Overview Errors\n\nContinuous variables have less overall error than categorical variables.\nSingle Imputation is the worst performing method of imputation.\nMICE is the best performing method of imputation when compared to kNN and RF imputation in our analysis.\nkNN and RF had similar performance during evaluation however, RF had less error across the various types of variables."
+  },
+  {
+    "objectID": "index.html#conclusions",
+    "href": "index.html#conclusions",
+    "title": "Missing Data and Imputation",
+    "section": "Conclusions",
+    "text": "Conclusions"
+  },
+  {
+    "objectID": "index.html#error-comparison-for-types-of-missing-data",
+    "href": "index.html#error-comparison-for-types-of-missing-data",
+    "title": "Missing Data and Imputation",
+    "section": "Error Comparison for Types of Missing Data",
+    "text": "Error Comparison for Types of Missing Data\n\nThe expectation was for the MAR type of missing data to be the best performer in terms of least amount of error percent however, because of the smaller size of our data set, it is not as effective as it would be for a larger data set.\nGiven a larger data set the differences between our missing data types is more easily compared. The methods of imputation are designed for MAR type of missing data.\nMCAR missing type of data is somewhat unrealistic because you would be omitting variables without relationships to the result."
+  },
+  {
+    "objectID": "index.html#conclusions-1",
+    "href": "index.html#conclusions-1",
+    "title": "Missing Data and Imputation",
+    "section": "Conclusions",
+    "text": "Conclusions"
+  },
+  {
+    "objectID": "index.html#error-comparison-for-types-of-variables",
+    "href": "index.html#error-comparison-for-types-of-variables",
+    "title": "Missing Data and Imputation",
+    "section": "Error Comparison for Types of Variables",
+    "text": "Error Comparison for Types of Variables\n\nComparisons above showcase the imputation types with respect to variable types.\nUpper limit of errors for continuous variables is 40%, binary categorical variables is 60%, multinomial categorical variables is 100%, and ordinal categorical variables is 95%.\nCategorical variables error is higher because variability is based on frequency of occurrence in our data.\nWithin larger datasets this error will drop because each miss classification has less impact on total error assuming the missing data type is MAR."
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "Missing Data and Imputation",
+    "section": "References",
+    "text": "References\n\n[1] Papageorgiou, G., Grant, S. W., Takkenberg, J. J. M., & Mokhles, M. M. (2018). Statistical primer: How to deal with missing data in scientific research?. Interactive CardioVascular And Thoracic Surgery, 27(2), 153--158. https://doi.org/10.1093/icvts/ivy102\n[2] Azur, M. J., Stuart, E. A., Frangakis, C., & Leaf, P. J. (2011). Multiple imputation by chained equations: what is it and how does it work?. International journal of methods in psychiatric research, 20(1), 40--49. https://doi.org/10.1002/mpr.329\n[3] Badr, W. (2019). Retrieved from 6 Different Ways to Compensate for Missing Values In a Dataset (Data Imputation with examples). Towards Data Science. https://towardsdatascience.com/6-different-ways-to-compensate-for-missing-values-data-imputation-with-examples-6022d9ca0779\n[4] Obadia, Y. (2017). The use of KNN for missing values. Towards Data Science. https://towardsdatascience.com/the-use-of-knn-for-missing-values-cf33d935c637\n[5] Zhang, Z. (2016). Missing data imputation: Focusing on single imputation. Annals of translational medicine, 4(1). https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4716933/"
+  },
+  {
+    "objectID": "index.html#questions",
+    "href": "index.html#questions",
+    "title": "Missing Data and Imputation",
+    "section": "Questions?",
+    "text": "Questions?"
+  }
+]
