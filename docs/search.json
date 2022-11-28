@@ -18,14 +18,14 @@
     "href": "index.html#introduction",
     "title": "Missing Data and Imputation",
     "section": "Introduction",
-    "text": "Introduction\nData is becoming more integrated into our society and decision-making process. The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. Real world data is usually incomplete with missing data."
+    "text": "Introduction\n\nData is becoming more integrated into our society and decision-making process.\nThe magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc.\nReal world data is usually incomplete with missing data."
   },
   {
     "objectID": "index.html#problem-statement",
     "href": "index.html#problem-statement",
     "title": "Missing Data and Imputation",
     "section": "Problem Statement",
-    "text": "Problem Statement\nOriginal solutions such as listwise deletion or univariate imputation of the mean create bais and inaccurate results. Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods."
+    "text": "Problem Statement\n\nOriginal solutions such as list-wise deletion or univariate imputation of the mean create bias and inaccurate results.\nMultiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis.\nOur focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods."
   },
   {
     "objectID": "index.html#types-of-missing-data",
@@ -95,7 +95,7 @@
     "href": "index.html#methods",
     "title": "Missing Data and Imputation",
     "section": "Methods",
-    "text": "Methods\n\nSingle Imputation replacing a missing value with a single value usually in the form of a single variables mean, median, for frequency.\nkNN Imputation makes predictions about missing values by finding the K’s closest neighbors and impute the value based on the neighborhood.\nRandom Forest Imputation an iterative imputation method based on a random forest allows quality and flexibility utilizing built-in out-of-bag error estimates.\nMICE Imputation involves filling the missing values multiple times until a certain threshold is met."
+    "text": "Methods\n\nSingle Imputation replacing a missing value with a single value usually in the form of a single variables mean, median, or frequency.\nkNN Imputation makes predictions about missing values by finding the K’s closest neighbors and impute the value based on the neighborhood.\nRandom Forest Imputation an iterative imputation method based on a random forest allows quality and flexibility utilizing built-in out-of-bag error estimates.\nMICE Imputation involves filling the missing values multiple times until a certain threshold is met."
   },
   {
     "objectID": "index.html#percent-error-calculation",
