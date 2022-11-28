@@ -1,0 +1,1024 @@
+---
+title: "Missing Data and Imputation"
+format:
+  revealjs:
+    embed-resources: TRUE
+    self-contained: true
+    slide-number: false
+    width: 1600
+    height: 900
+    df-print: paged
+    editor: visual
+    theme: dark
+---
+
+
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+# Libraries to be used
+# Libraries to be used
+library(tidyverse)
+library(mice) # Library to generate missing values and to use MICE technique
+library(VIM) # Library to impute NAs with KNN
+library(missForest) # Library to impute NAs with random forest
+library(DT) # Library to have an interacting table
+library(naniar) # Library to show NAs and locations
+library(ggpubr) # Combine plots
+library(Hmisc) # plot hist can be used to impute too
+library(reshape2) #visualization tool
+# Dataset Import and Initial Manipulation
+# Load dataset
+dataset <- read.csv("/Users/gabrielrivera/Documents/Maestria/Courses/5- Fall 2022/STA6257/Missing Data Practice/GlassdoorGenderPayGap.csv")
+data <- dataset #%>% select(JobTitle, Gender, Age, Seniority)
+data$Age <- as.numeric(data$Age)
+data$PerfEval <- as.factor(data$PerfEval)
+data$Seniority <- as.factor(data$Seniority)
+data$BasePay <- as.numeric(data$BasePay)
+data$Bonus <- as.numeric(data$Bonus)
+# Generate Random Missing Values
+# Generate MCAR Missing Values
+dataMCAR <- ampute(data, prop=0.2, mech="MCAR")$amp # The ampute generates a bunch of unnecesary things and $amp has the data w NAs
+# Get the location index of the NAs
+index_MCAR <- as_tibble(which(is.na(dataMCAR), arr.ind=TRUE))
+# Generate vector that contains the original data that got an NA
+JobTitle_MCAR_NAs  <- data$JobTitle [filter(index_MCAR, index_MCAR$col==1)$row]
+Gender_MCAR_NAs    <- data$Gender   [filter(index_MCAR, index_MCAR$col==2)$row]
+Age_MCAR_NAs       <- data$Age      [filter(index_MCAR, index_MCAR$col==3)$row]
+PerfEval_MCAR_NAs  <- data$PerfEval [filter(index_MCAR, index_MCAR$col==4)$row]
+Education_MCAR_NAs <- data$Education[filter(index_MCAR, index_MCAR$col==5)$row]
+Dept_MCAR_NAs      <- data$Dept     [filter(index_MCAR, index_MCAR$col==6)$row]
+Seniority_MCAR_NAs <- data$Seniority[filter(index_MCAR, index_MCAR$col==7)$row]
+BasePay_MCAR_NAs   <- data$BasePay  [filter(index_MCAR, index_MCAR$col==8)$row]
+Bonus_MCAR_NAs     <- data$Bonus    [filter(index_MCAR, index_MCAR$col==9)$row]
+# MAR and MNAR Pre-Processing
+data$JobTitle    <- as.factor(data$JobTitle)
+data$Gender      <- as.factor(data$Gender)
+data$Education   <- as.factor(data$Education)
+data$Dept        <- as.factor(data$Dept)
+JobTitle_levels  <- levels(data$JobTitle)
+Gender_levels    <- levels(data$Gender)
+Education_levels <- levels(data$Education)
+Dept_levels      <- levels(data$Dept)
+# Generate MAR Missing Values
+dataMAR <- ampute(data, prop=0.2, mech="MAR")$amp
+# Substitute MAR numeric values back to character
+dataMAR$JobTitle  <- as.character(JobTitle_levels[dataMAR$JobTitle])
+dataMAR$Gender    <- as.character(Gender_levels[dataMAR$Gender])
+dataMAR$Education <- as.character(Education_levels[dataMAR$Education])
+dataMAR$Dept      <- as.character(Dept_levels[dataMAR$Dept])
+dataMAR$PerfEval  <- as.factor(dataMAR$PerfEval)
+dataMAR$Seniority <- as.factor(dataMAR$Seniority)
+# Get the location index of the NAs
+index_MAR <- as_tibble(which(is.na(dataMAR), arr.ind=TRUE))
+# Generate vector that contains the original data that got an NA
+JobTitle_MAR_NAs  <- data$JobTitle [filter(index_MAR, index_MAR$col==1)$row]
+Gender_MAR_NAs    <- data$Gender   [filter(index_MAR, index_MAR$col==2)$row]
+Age_MAR_NAs       <- data$Age      [filter(index_MAR, index_MAR$col==3)$row]
+PerfEval_MAR_NAs  <- data$PerfEval [filter(index_MAR, index_MAR$col==4)$row]
+Education_MAR_NAs <- data$Education[filter(index_MAR, index_MAR$col==5)$row]
+Dept_MAR_NAs      <- data$Dept     [filter(index_MAR, index_MAR$col==6)$row]
+Seniority_MAR_NAs <- data$Seniority[filter(index_MAR, index_MAR$col==7)$row]
+BasePay_MAR_NAs   <- data$BasePay  [filter(index_MAR, index_MAR$col==8)$row]
+Bonus_MAR_NAs     <- data$Bonus    [filter(index_MAR, index_MAR$col==9)$row]
+# Generate MNAR Missing Values
+dataMNAR <- ampute(data, prop=0.2, mech="MNAR")$amp
+# Substitute MNAR numeric values back to character
+dataMNAR$JobTitle  <- as.character(JobTitle_levels[dataMNAR$JobTitle])
+dataMNAR$Gender    <- as.character(Gender_levels[dataMNAR$Gender])
+dataMNAR$Education <- as.character(Education_levels[dataMNAR$Education])
+dataMNAR$Dept      <- as.character(Dept_levels[dataMNAR$Dept])
+dataMNAR$PerfEval  <- as.factor(dataMNAR$PerfEval)
+dataMNAR$Seniority <- as.factor(dataMNAR$Seniority)
+# Get the location index of the NAs
+index_MNAR <- as_tibble(which(is.na(dataMNAR), arr.ind=TRUE))
+# Generate vector that contains the original data that got an NA
+JobTitle_MNAR_NAs  <- data$JobTitle [filter(index_MNAR, index_MNAR$col==1)$row]
+Gender_MNAR_NAs    <- data$Gender   [filter(index_MNAR, index_MNAR$col==2)$row]
+Age_MNAR_NAs       <- data$Age      [filter(index_MNAR, index_MNAR$col==3)$row]
+PerfEval_MNAR_NAs  <- data$PerfEval [filter(index_MNAR, index_MNAR$col==4)$row]
+Education_MNAR_NAs <- data$Education[filter(index_MNAR, index_MNAR$col==5)$row]
+Dept_MNAR_NAs      <- data$Dept     [filter(index_MNAR, index_MNAR$col==6)$row]
+Seniority_MNAR_NAs <- data$Seniority[filter(index_MNAR, index_MNAR$col==7)$row]
+BasePay_MNAR_NAs   <- data$BasePay  [filter(index_MNAR, index_MNAR$col==8)$row]
+Bonus_MNAR_NAs     <- data$Bonus    [filter(index_MNAR, index_MNAR$col==9)$row]
+# Single Imputation (SI) using Mean and Most Frequent (MF) value
+# Impute MCAR NAs with mean for continuous variables and most frequent for categorical variables
+MCAR_SI <- tibble(  JobTitle = as.character(names(which.max(table(dataMCAR$JobTitle)))),
+                    Gender = as.character(names(which.max(table(dataMCAR$Gender)))),
+                    Age = mean(dataMCAR$Age,na.rm = TRUE),
+                    PerfEval = as.character(names(which.max(table(dataMCAR$PerfEval)))),
+                    Education = as.character(names(which.max(table(dataMCAR$Education)))),
+                    Dept = as.character(names(which.max(table(dataMCAR$Dept)))),
+                    Seniority = as.factor(names(which.max(table(dataMCAR$Seniority)))),
+                    BasePay = mean(dataMCAR$BasePay,na.rm = TRUE),
+                    Bonus = mean(dataMCAR$Bonus,na.rm = TRUE))
+dataMCAR_SI <- dataMCAR
+dataMCAR_SI$JobTitle[is.na(dataMCAR_SI$JobTitle)] <- MCAR_SI$JobTitle
+dataMCAR_SI$Gender[is.na(dataMCAR_SI$Gender)] <- MCAR_SI$Gender
+dataMCAR_SI$Age[is.na(dataMCAR_SI$Age)] <- MCAR_SI$Age
+dataMCAR_SI$PerfEval[is.na(dataMCAR_SI$PerfEval)] <- MCAR_SI$PerfEval
+dataMCAR_SI$Education[is.na(dataMCAR_SI$Education)] <- MCAR_SI$Education
+dataMCAR_SI$Dept[is.na(dataMCAR_SI$Dept)] <- MCAR_SI$Dept
+dataMCAR_SI$Seniority[is.na(dataMCAR_SI$Seniority)] <- MCAR_SI$Seniority
+dataMCAR_SI$BasePay[is.na(dataMCAR_SI$BasePay)] <- MCAR_SI$BasePay
+dataMCAR_SI$Bonus[is.na(dataMCAR_SI$Bonus)] <- MCAR_SI$Bonus
+# Impute MAR NAs with mean for continuous variables and most frequent for categorical variables
+MAR_SI <- tibble(  JobTitle = as.character(names(which.max(table(dataMAR$JobTitle)))),
+                    Gender = as.character(names(which.max(table(dataMAR$Gender)))),
+                    Age = mean(dataMAR$Age,na.rm = TRUE),
+                    PerfEval = as.character(names(which.max(table(dataMAR$PerfEval)))),
+                    Education = as.character(names(which.max(table(dataMAR$Education)))),
+                    Dept = as.character(names(which.max(table(dataMAR$Dept)))),
+                    Seniority = as.factor(names(which.max(table(dataMAR$Seniority)))),
+                    BasePay = mean(dataMAR$BasePay,na.rm = TRUE),
+                    Bonus = mean(dataMAR$Bonus,na.rm = TRUE))
+dataMAR_SI <- dataMAR
+dataMAR_SI$JobTitle[is.na(dataMAR_SI$JobTitle)] <- MAR_SI$JobTitle
+dataMAR_SI$Gender[is.na(dataMAR_SI$Gender)] <- MAR_SI$Gender
+dataMAR_SI$Age[is.na(dataMAR_SI$Age)] <- MAR_SI$Age
+dataMAR_SI$PerfEval[is.na(dataMAR_SI$PerfEval)] <- MAR_SI$PerfEval
+dataMAR_SI$Education[is.na(dataMAR_SI$Education)] <- MAR_SI$Education
+dataMAR_SI$Dept[is.na(dataMAR_SI$Dept)] <- MAR_SI$Dept
+dataMAR_SI$Seniority[is.na(dataMAR_SI$Seniority)] <- MAR_SI$Seniority
+dataMAR_SI$BasePay[is.na(dataMAR_SI$BasePay)] <- MAR_SI$BasePay
+dataMAR_SI$Bonus[is.na(dataMAR_SI$Bonus)] <- MAR_SI$Bonus
+# Impute MNAR NAs with mean for continuous variables and most frequent for categorical variables
+MNAR_SI <- tibble(  JobTitle = as.character(names(which.max(table(dataMNAR$JobTitle)))),
+                    Gender = as.character(names(which.max(table(dataMNAR$Gender)))),
+                    Age = mean(dataMNAR$Age,na.rm = TRUE),
+                    PerfEval = as.character(names(which.max(table(dataMNAR$PerfEval)))),
+                    Education = as.character(names(which.max(table(dataMNAR$Education)))),
+                    Dept = as.character(names(which.max(table(dataMNAR$Dept)))),
+                    Seniority = as.factor(names(which.max(table(dataMNAR$Seniority)))),
+                    BasePay = mean(dataMNAR$BasePay,na.rm = TRUE),
+                    Bonus = mean(dataMNAR$Bonus,na.rm = TRUE))
+dataMNAR_SI <- dataMNAR
+dataMNAR_SI$JobTitle[is.na(dataMNAR_SI$JobTitle)] <- MNAR_SI$JobTitle
+dataMNAR_SI$Gender[is.na(dataMNAR_SI$Gender)] <- MNAR_SI$Gender
+dataMNAR_SI$Age[is.na(dataMNAR_SI$Age)] <- MNAR_SI$Age
+dataMNAR_SI$PerfEval[is.na(dataMNAR_SI$PerfEval)] <- MNAR_SI$PerfEval
+dataMNAR_SI$Education[is.na(dataMNAR_SI$Education)] <- MNAR_SI$Education
+dataMNAR_SI$Dept[is.na(dataMNAR_SI$Dept)] <- MNAR_SI$Dept
+dataMNAR_SI$Seniority[is.na(dataMNAR_SI$Seniority)] <- MNAR_SI$Seniority
+dataMNAR_SI$BasePay[is.na(dataMNAR_SI$BasePay)] <- MNAR_SI$BasePay
+dataMNAR_SI$Bonus[is.na(dataMNAR_SI$Bonus)] <- MNAR_SI$Bonus
+# Imputation using kNN
+# Selection of k
+k <- round(sqrt(nrow(data)))
+k <- if_else(k %% 2 == 0, k+1,k)
+# Impute MCAR NAs with kNN
+dataMCAR_kNN <- dataMCAR
+dataMCAR_kNN <- kNN(dataMCAR_kNN, k=k)
+# Impute MAR NAs with kNN
+dataMAR_kNN <- dataMAR
+dataMAR_kNN <- kNN(dataMAR_kNN, k=k)
+# Impute MNAR NAs with kNN
+dataMNAR_kNN <- dataMNAR
+dataMNAR_kNN <- kNN(dataMNAR_kNN, k=k)
+# Imputation using Random Forest (RF)
+# Impute MCAR NAs with RF
+dataMCAR_RF <- dataMCAR
+dataMCAR_RF$JobTitle <- as.factor(dataMCAR_RF$JobTitle)
+dataMCAR_RF$Gender <- as.factor(dataMCAR_RF$Gender)
+dataMCAR_RF$Education <- as.factor(dataMCAR_RF$Education)
+dataMCAR_RF$Dept <- as.factor(dataMCAR_RF$Dept)
+dataMCAR_RF <- missForest(dataMCAR_RF)
+# Impute MAR NAs with RF
+dataMAR_RF <- dataMAR
+dataMAR_RF$JobTitle <- as.factor(dataMAR_RF$JobTitle)
+dataMAR_RF$Gender <- as.factor(dataMAR_RF$Gender)
+dataMAR_RF$Education <- as.factor(dataMAR_RF$Education)
+dataMAR_RF$Dept <- as.factor(dataMAR_RF$Dept)
+dataMAR_RF <- missForest(dataMAR_RF)
+# Impute MNAR NAs with RF
+dataMNAR_RF <- dataMNAR
+dataMNAR_RF$JobTitle <- as.factor(dataMNAR_RF$JobTitle)
+dataMNAR_RF$Gender <- as.factor(dataMNAR_RF$Gender)
+dataMNAR_RF$Education <- as.factor(dataMNAR_RF$Education)
+dataMNAR_RF$Dept <- as.factor(dataMNAR_RF$Dept)
+dataMNAR_RF <- missForest(dataMNAR_RF)
+# Imputation using MICE
+# Impute MCAR NAs with MICE
+dataMCAR_MICE <- dataMCAR
+dataMCAR_MICE$JobTitle  <- as.factor(dataMCAR_MICE$JobTitle)
+dataMCAR_MICE$Gender    <- as.factor(dataMCAR_MICE$Gender)
+dataMCAR_MICE$Education <- as.factor(dataMCAR_MICE$Education)
+dataMCAR_MICE$Dept <- as.factor(dataMCAR_MICE$Dept)
+dataMCAR_MICE <- mice(dataMCAR_MICE, m=5, method=c("polyreg","logreg","pmm","polr","polr","polyreg","polr","pmm","pmm"), maxit=20)
+dataMCAR_MICE_Final <- complete(dataMCAR_MICE,5)
+# Impute MAR NAs with MICE
+dataMAR_MICE           <- dataMAR
+dataMAR_MICE$JobTitle  <- as.factor(dataMAR_MICE$JobTitle)
+dataMAR_MICE$Gender    <- as.factor(dataMAR_MICE$Gender)
+dataMAR_MICE$Education <- as.factor(dataMAR_MICE$Education)
+dataMAR_MICE$Dept      <- as.factor(dataMAR_MICE$Dept)
+dataMAR_MICE <- mice(dataMAR_MICE, m=5, method=c("polyreg","logreg","pmm","polr","polr","polyreg","polr","pmm","pmm"), maxit=20)
+dataMAR_MICE_Final <- complete(dataMAR_MICE,5)
+# Impute MNAR NAs with MICE
+dataMNAR_MICE <- dataMNAR
+dataMNAR_MICE$JobTitle <- as.factor(dataMNAR_MICE$JobTitle)
+dataMNAR_MICE$Gender <- as.factor(dataMNAR_MICE$Gender)
+dataMNAR_MICE$Education <- as.factor(dataMNAR_MICE$Education)
+dataMNAR_MICE$Dept <- as.factor(dataMNAR_MICE$Dept)
+dataMNAR_MICE <- mice(dataMNAR_MICE, m=5, method=c("polyreg","logreg","pmm","polr","polr","polyreg","polr","pmm","pmm"), maxit=20)
+dataMNAR_MICE_Final <- complete(dataMNAR_MICE,5)
+# Group Job Title Original and Imputed data
+JobTitle_MCAR_Data <- tibble(JobTitle_Original = JobTitle_MCAR_NAs,
+                       JobTitle_SI=dataMCAR_SI$JobTitle[filter(index_MCAR, index_MCAR$col==1)$row],
+                       JobTitle_kNN=dataMCAR_kNN$JobTitle[filter(index_MCAR, index_MCAR$col==1)$row],
+                       JobTitle_RF=dataMCAR_RF$ximp$JobTitle[filter(index_MCAR, index_MCAR$col==1)$row], 
+                       JobTitle_MICE=dataMCAR_MICE_Final$JobTitle[filter(index_MCAR, index_MCAR$col==1)$row])
+JobTitle_MAR_Data <- tibble(JobTitle_Original = JobTitle_MAR_NAs,
+                       JobTitle_SI=dataMAR_SI$JobTitle[filter(index_MAR, index_MAR$col==1)$row],
+                       JobTitle_kNN=dataMAR_kNN$JobTitle[filter(index_MAR, index_MAR$col==1)$row],
+                       JobTitle_RF=dataMAR_RF$ximp$JobTitle[filter(index_MAR, index_MAR$col==1)$row], 
+                       JobTitle_MICE=dataMAR_MICE_Final$JobTitle[filter(index_MAR, index_MAR$col==1)$row])
+JobTitle_MNAR_Data <- tibble(JobTitle_Original = JobTitle_MNAR_NAs,
+                       JobTitle_SI=dataMNAR_SI$JobTitle[filter(index_MNAR, index_MNAR$col==1)$row],
+                       JobTitle_kNN=dataMNAR_kNN$JobTitle[filter(index_MNAR, index_MNAR$col==1)$row],
+                       JobTitle_RF=dataMNAR_RF$ximp$JobTitle[filter(index_MNAR, index_MNAR$col==1)$row], 
+                       JobTitle_MICE=dataMNAR_MICE_Final$JobTitle[filter(index_MNAR, index_MNAR$col==1)$row])
+# Add count variable for Job Title to compute error
+# MCAR
+JobTitle_MCAR_Data$JobTitle_SI_Count <- ifelse(JobTitle_MCAR_Data$JobTitle_Original==JobTitle_MCAR_Data$JobTitle_SI,as.integer(1),as.integer(0))
+JobTitle_MCAR_Data$JobTitle_kNN_Count <- ifelse(JobTitle_MCAR_Data$JobTitle_Original==JobTitle_MCAR_Data$JobTitle_kNN,as.integer(1),as.integer(0))
+JobTitle_MCAR_Data$JobTitle_RF_Count <- ifelse(JobTitle_MCAR_Data$JobTitle_Original==JobTitle_MCAR_Data$JobTitle_RF,as.integer(1),as.integer(0))
+JobTitle_MCAR_Data$JobTitle_MICE_Count <- ifelse(JobTitle_MCAR_Data$JobTitle_Original==JobTitle_MCAR_Data$JobTitle_MICE,as.integer(1),as.integer(0))
+# MAR
+JobTitle_MAR_Data$JobTitle_SI_Count <- ifelse(JobTitle_MAR_Data$JobTitle_Original==JobTitle_MAR_Data$JobTitle_SI,as.integer(1),as.integer(0))
+JobTitle_MAR_Data$JobTitle_kNN_Count <- ifelse(JobTitle_MAR_Data$JobTitle_Original==JobTitle_MAR_Data$JobTitle_kNN,as.integer(1),as.integer(0))
+JobTitle_MAR_Data$JobTitle_RF_Count <- ifelse(JobTitle_MAR_Data$JobTitle_Original==JobTitle_MAR_Data$JobTitle_RF,as.integer(1),as.integer(0))
+JobTitle_MAR_Data$JobTitle_MICE_Count <- ifelse(JobTitle_MAR_Data$JobTitle_Original==JobTitle_MAR_Data$JobTitle_MICE,as.integer(1),as.integer(0))
+# MNAR
+JobTitle_MNAR_Data$JobTitle_SI_Count <- ifelse(JobTitle_MNAR_Data$JobTitle_Original==JobTitle_MNAR_Data$JobTitle_SI,as.integer(1),as.integer(0))
+JobTitle_MNAR_Data$JobTitle_kNN_Count <- ifelse(JobTitle_MNAR_Data$JobTitle_Original==JobTitle_MNAR_Data$JobTitle_kNN,as.integer(1),as.integer(0))
+JobTitle_MNAR_Data$JobTitle_RF_Count <- ifelse(JobTitle_MNAR_Data$JobTitle_Original==JobTitle_MNAR_Data$JobTitle_RF,as.integer(1),as.integer(0))
+JobTitle_MNAR_Data$JobTitle_MICE_Count <- ifelse(JobTitle_MNAR_Data$JobTitle_Original==JobTitle_MNAR_Data$JobTitle_MICE,as.integer(1),as.integer(0))
+# Compute Percent of Error for Job Title
+# MCAR Error Percentage
+Theor_MCAR <- nrow(JobTitle_MCAR_Data)
+JobTitle_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(JobTitle_MCAR_Data$JobTitle_SI_Count==1)))/Theor_MCAR*100
+JobTitle_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(JobTitle_MCAR_Data$JobTitle_kNN_Count==1)))/Theor_MCAR*100
+JobTitle_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(JobTitle_MCAR_Data$JobTitle_RF_Count==1)))/Theor_MCAR*100
+JobTitle_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(JobTitle_MCAR_Data$JobTitle_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(JobTitle_MAR_Data)
+JobTitle_MAR_SI_Err   <- abs(Theor_MAR-length(which(JobTitle_MAR_Data$JobTitle_SI_Count==1)))/Theor_MAR*100
+JobTitle_MAR_kNN_Err  <- abs(Theor_MAR-length(which(JobTitle_MAR_Data$JobTitle_kNN_Count==1)))/Theor_MAR*100
+JobTitle_MAR_RF_Err   <- abs(Theor_MAR-length(which(JobTitle_MAR_Data$JobTitle_RF_Count==1)))/Theor_MAR*100
+JobTitle_MAR_MICE_Err <- abs(Theor_MAR-length(which(JobTitle_MAR_Data$JobTitle_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(JobTitle_MNAR_Data)
+JobTitle_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(JobTitle_MNAR_Data$JobTitle_SI_Count==1)))/Theor_MNAR*100
+JobTitle_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(JobTitle_MNAR_Data$JobTitle_kNN_Count==1)))/Theor_MNAR*100
+JobTitle_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(JobTitle_MNAR_Data$JobTitle_RF_Count==1)))/Theor_MNAR*100
+JobTitle_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(JobTitle_MNAR_Data$JobTitle_MICE_Count==1)))/Theor_MNAR*100
+JobTitle_Error <- data.frame(SI_Error = c(JobTitle_MCAR_SI_Err, JobTitle_MAR_SI_Err, JobTitle_MNAR_SI_Err),
+                              kNN_Error = c(JobTitle_MCAR_kNN_Err, JobTitle_MAR_kNN_Err, JobTitle_MAR_kNN_Err),
+                              RF_Error = c(JobTitle_MCAR_RF_Err, JobTitle_MAR_RF_Err, JobTitle_MAR_RF_Err),
+                              MICE_Error = c(JobTitle_MCAR_MICE_Err, JobTitle_MAR_MICE_Err, JobTitle_MAR_MICE_Err))
+rownames(JobTitle_Error) <- c("JobTitle_MCAR","JobTitle_MAR","JobTitle_MNAR")
+# Group Gender Original and Imputed data
+Gender_MCAR_Data <- tibble(Gender_Original = Gender_MCAR_NAs,
+                       Gender_SI=dataMCAR_SI$Gender[filter(index_MCAR, index_MCAR$col==2)$row],
+                       Gender_kNN=dataMCAR_kNN$Gender[filter(index_MCAR, index_MCAR$col==2)$row],
+                       Gender_RF=dataMCAR_RF$ximp$Gender[filter(index_MCAR, index_MCAR$col==2)$row], 
+                       Gender_MICE=dataMCAR_MICE_Final$Gender[filter(index_MCAR, index_MCAR$col==2)$row])
+Gender_MAR_Data <- tibble(Gender_Original = Gender_MAR_NAs,
+                       Gender_SI=dataMAR_SI$Gender[filter(index_MAR, index_MAR$col==2)$row],
+                       Gender_kNN=dataMAR_kNN$Gender[filter(index_MAR, index_MAR$col==2)$row],
+                       Gender_RF=dataMAR_RF$ximp$Gender[filter(index_MAR, index_MAR$col==2)$row], 
+                       Gender_MICE=dataMAR_MICE_Final$Gender[filter(index_MAR, index_MAR$col==2)$row])
+Gender_MNAR_Data <- tibble(Gender_Original = Gender_MNAR_NAs,
+                       Gender_SI=dataMNAR_SI$Gender[filter(index_MNAR, index_MNAR$col==2)$row],
+                       Gender_kNN=dataMNAR_kNN$Gender[filter(index_MNAR, index_MNAR$col==2)$row],
+                       Gender_RF=dataMNAR_RF$ximp$Gender[filter(index_MNAR, index_MNAR$col==2)$row], 
+                       Gender_MICE=dataMNAR_MICE_Final$Gender[filter(index_MNAR, index_MNAR$col==2)$row])
+# Add count variable for Job Title to compute error
+# MCAR
+Gender_MCAR_Data$Gender_SI_Count <- ifelse(Gender_MCAR_Data$Gender_Original==Gender_MCAR_Data$Gender_SI,as.integer(1),as.integer(0))
+Gender_MCAR_Data$Gender_kNN_Count <- ifelse(Gender_MCAR_Data$Gender_Original==Gender_MCAR_Data$Gender_kNN,as.integer(1),as.integer(0))
+Gender_MCAR_Data$Gender_RF_Count <- ifelse(Gender_MCAR_Data$Gender_Original==Gender_MCAR_Data$Gender_RF,as.integer(1),as.integer(0))
+Gender_MCAR_Data$Gender_MICE_Count <- ifelse(Gender_MCAR_Data$Gender_Original==Gender_MCAR_Data$Gender_MICE,as.integer(1),as.integer(0))
+# MAR
+Gender_MAR_Data$Gender_SI_Count <- ifelse(Gender_MAR_Data$Gender_Original==Gender_MAR_Data$Gender_SI,as.integer(1),as.integer(0))
+Gender_MAR_Data$Gender_kNN_Count <- ifelse(Gender_MAR_Data$Gender_Original==Gender_MAR_Data$Gender_kNN,as.integer(1),as.integer(0))
+Gender_MAR_Data$Gender_RF_Count <- ifelse(Gender_MAR_Data$Gender_Original==Gender_MAR_Data$Gender_RF,as.integer(1),as.integer(0))
+Gender_MAR_Data$Gender_MICE_Count <- ifelse(Gender_MAR_Data$Gender_Original==Gender_MAR_Data$Gender_MICE,as.integer(1),as.integer(0))
+# MNAR
+Gender_MNAR_Data$Gender_SI_Count <- ifelse(Gender_MNAR_Data$Gender_Original==Gender_MNAR_Data$Gender_SI,as.integer(1),as.integer(0))
+Gender_MNAR_Data$Gender_kNN_Count <- ifelse(Gender_MNAR_Data$Gender_Original==Gender_MNAR_Data$Gender_kNN,as.integer(1),as.integer(0))
+Gender_MNAR_Data$Gender_RF_Count <- ifelse(Gender_MNAR_Data$Gender_Original==Gender_MNAR_Data$Gender_RF,as.integer(1),as.integer(0))
+Gender_MNAR_Data$Gender_MICE_Count <- ifelse(Gender_MNAR_Data$Gender_Original==Gender_MNAR_Data$Gender_MICE,as.integer(1),as.integer(0))
+# Compute Percent of Error for Gender
+# MCAR Error Percentage
+Theor_MCAR <- nrow(Gender_MCAR_Data)
+Gender_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(Gender_MCAR_Data$Gender_SI_Count==1)))/Theor_MCAR*100
+Gender_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(Gender_MCAR_Data$Gender_kNN_Count==1)))/Theor_MCAR*100
+Gender_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(Gender_MCAR_Data$Gender_RF_Count==1)))/Theor_MCAR*100
+Gender_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(Gender_MCAR_Data$Gender_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(Gender_MAR_Data)
+Gender_MAR_SI_Err   <- abs(Theor_MAR-length(which(Gender_MAR_Data$Gender_SI_Count==1)))/Theor_MAR*100
+Gender_MAR_kNN_Err  <- abs(Theor_MAR-length(which(Gender_MAR_Data$Gender_kNN_Count==1)))/Theor_MAR*100
+Gender_MAR_RF_Err   <- abs(Theor_MAR-length(which(Gender_MAR_Data$Gender_RF_Count==1)))/Theor_MAR*100
+Gender_MAR_MICE_Err <- abs(Theor_MAR-length(which(Gender_MAR_Data$Gender_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(Gender_MNAR_Data)
+Gender_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(Gender_MNAR_Data$Gender_SI_Count==1)))/Theor_MNAR*100
+Gender_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(Gender_MNAR_Data$Gender_kNN_Count==1)))/Theor_MNAR*100
+Gender_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(Gender_MNAR_Data$Gender_RF_Count==1)))/Theor_MNAR*100
+Gender_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(Gender_MNAR_Data$Gender_MICE_Count==1)))/Theor_MNAR*100
+Gender_Error <- data.frame(SI_Error = c(Gender_MCAR_SI_Err, Gender_MAR_SI_Err, Gender_MNAR_SI_Err),
+                              kNN_Error = c(Gender_MCAR_kNN_Err, Gender_MAR_kNN_Err, Gender_MAR_kNN_Err),
+                              RF_Error = c(Gender_MCAR_RF_Err, Gender_MAR_RF_Err, Gender_MAR_RF_Err),
+                              MICE_Error = c(Gender_MCAR_MICE_Err, Gender_MAR_MICE_Err, Gender_MAR_MICE_Err))
+rownames(Gender_Error) <- c("Gender_MCAR","Gender_MAR","Gender_MNAR")
+# Group Age Original and Imputed data
+Age_MCAR_Data <- tibble(Age_Original = Age_MCAR_NAs,
+                       Age_SI=dataMCAR_SI$Age[filter(index_MCAR, index_MCAR$col==3)$row],
+                       Age_kNN=dataMCAR_kNN$Age[filter(index_MCAR, index_MCAR$col==3)$row],
+                       Age_RF=dataMCAR_RF$ximp$Age[filter(index_MCAR, index_MCAR$col==3)$row], 
+                       Age_MICE=dataMCAR_MICE_Final$Age[filter(index_MCAR, index_MCAR$col==3)$row])
+Age_MAR_Data <- tibble(Age_Original = Age_MAR_NAs,
+                       Age_SI=dataMAR_SI$Age[filter(index_MAR, index_MAR$col==3)$row],
+                       Age_kNN=dataMAR_kNN$Age[filter(index_MAR, index_MAR$col==3)$row],
+                       Age_RF=dataMAR_RF$ximp$Age[filter(index_MAR, index_MAR$col==3)$row], 
+                       Age_MICE=dataMAR_MICE_Final$Age[filter(index_MAR, index_MAR$col==3)$row])
+Age_MNAR_Data <- tibble(Age_Original = Age_MNAR_NAs,
+                       Age_SI=dataMNAR_SI$Age[filter(index_MNAR, index_MNAR$col==3)$row],
+                       Age_kNN=dataMNAR_kNN$Age[filter(index_MNAR, index_MNAR$col==3)$row],
+                       Age_RF=dataMNAR_RF$ximp$Age[filter(index_MNAR, index_MNAR$col==3)$row], 
+                       Age_MICE=dataMNAR_MICE_Final$Age[filter(index_MNAR, index_MNAR$col==3)$row])
+# Compute Percent of Error for Age
+# MCAR Error Percentage
+Age_MCAR_Error <- tibble(Age_SI_Error=abs(Age_MCAR_Data$Age_Original-Age_MCAR_Data$Age_SI)/Age_MCAR_Data$Age_Original*100,
+                             Age_kNN_Error=abs(Age_MCAR_Data$Age_Original-Age_MCAR_Data$Age_kNN)/Age_MCAR_Data$Age_Original*100,
+                             Age_RF_Error=abs(Age_MCAR_Data$Age_Original-Age_MCAR_Data$Age_RF)/Age_MCAR_Data$Age_Original*100,
+                             Age_MICE_Error=abs(Age_MCAR_Data$Age_Original-Age_MCAR_Data$Age_MICE)/Age_MCAR_Data$Age_Original*100)
+# MAR Error Percentage
+Age_MAR_Error <- tibble(Age_SI_Error=abs(Age_MAR_Data$Age_Original-Age_MAR_Data$Age_SI)/Age_MAR_Data$Age_Original*100,
+                             Age_kNN_Error=abs(Age_MAR_Data$Age_Original-Age_MAR_Data$Age_kNN)/Age_MAR_Data$Age_Original*100,
+                             Age_RF_Error=abs(Age_MAR_Data$Age_Original-Age_MAR_Data$Age_RF)/Age_MAR_Data$Age_Original*100,
+                             Age_MICE_Error=abs(Age_MAR_Data$Age_Original-Age_MAR_Data$Age_MICE)/Age_MAR_Data$Age_Original*100)
+# MNAR Error Percentage
+Age_MNAR_Error <- tibble(Age_SI_Error=abs(Age_MNAR_Data$Age_Original-Age_MNAR_Data$Age_SI)/Age_MNAR_Data$Age_Original*100,
+                             Age_kNN_Error=abs(Age_MNAR_Data$Age_Original-Age_MNAR_Data$Age_kNN)/Age_MNAR_Data$Age_Original*100,
+                             Age_RF_Error=abs(Age_MNAR_Data$Age_Original-Age_MNAR_Data$Age_RF)/Age_MNAR_Data$Age_Original*100,
+                             Age_MICE_Error=abs(Age_MNAR_Data$Age_Original-Age_MNAR_Data$Age_MICE)/Age_MNAR_Data$Age_Original*100)
+Age_Error <- data.frame(
+  SI_Error   = c(mean(Age_MCAR_Error$Age_SI_Error)  , mean(Age_MAR_Error$Age_SI_Error)  , mean(Age_MNAR_Error$Age_SI_Error)),
+  kNN_Error  = c(mean(Age_MCAR_Error$Age_kNN_Error) , mean(Age_MAR_Error$Age_kNN_Error) , mean(Age_MNAR_Error$Age_kNN_Error)),
+  RF_Error   = c(mean(Age_MCAR_Error$Age_RF_Error)  , mean(Age_MAR_Error$Age_RF_Error)  , mean(Age_MNAR_Error$Age_RF_Error)),
+  MICE_Error = c(mean(Age_MCAR_Error$Age_MICE_Error), mean(Age_MAR_Error$Age_MICE_Error), mean(Age_MNAR_Error$Age_MICE_Error)))
+rownames(Age_Error) <- c("Age_MCAR","Age_MAR","Age_MNAR")
+# Group PerfEval Original and Imputed data
+PerfEval_MCAR_Data <- tibble(PerfEval_Original = PerfEval_MCAR_NAs,
+                       PerfEval_SI=dataMCAR_SI$PerfEval[filter(index_MCAR, index_MCAR$col==4)$row],
+                       PerfEval_kNN=dataMCAR_kNN$PerfEval[filter(index_MCAR, index_MCAR$col==4)$row],
+                       PerfEval_RF=dataMCAR_RF$ximp$PerfEval[filter(index_MCAR, index_MCAR$col==4)$row], 
+                       PerfEval_MICE=dataMCAR_MICE_Final$PerfEval[filter(index_MCAR, index_MCAR$col==4)$row])
+PerfEval_MAR_Data <- tibble(PerfEval_Original = PerfEval_MAR_NAs,
+                       PerfEval_SI=dataMAR_SI$PerfEval[filter(index_MAR, index_MAR$col==4)$row],
+                       PerfEval_kNN=dataMAR_kNN$PerfEval[filter(index_MAR, index_MAR$col==4)$row],
+                       PerfEval_RF=dataMAR_RF$ximp$PerfEval[filter(index_MAR, index_MAR$col==4)$row], 
+                       PerfEval_MICE=dataMAR_MICE_Final$PerfEval[filter(index_MAR, index_MAR$col==4)$row])
+PerfEval_MNAR_Data <- tibble(PerfEval_Original = PerfEval_MNAR_NAs,
+                       PerfEval_SI=dataMNAR_SI$PerfEval[filter(index_MNAR, index_MNAR$col==4)$row],
+                       PerfEval_kNN=dataMNAR_kNN$PerfEval[filter(index_MNAR, index_MNAR$col==4)$row],
+                       PerfEval_RF=dataMNAR_RF$ximp$PerfEval[filter(index_MNAR, index_MNAR$col==4)$row], 
+                       PerfEval_MICE=dataMNAR_MICE_Final$PerfEval[filter(index_MNAR, index_MNAR$col==4)$row])
+# Add count variable for PerfEval to compute error
+# MCAR
+PerfEval_MCAR_Data$PerfEval_SI_Count <- ifelse(PerfEval_MCAR_Data$PerfEval_Original==PerfEval_MCAR_Data$PerfEval_SI,as.integer(1),as.integer(0))
+PerfEval_MCAR_Data$PerfEval_kNN_Count <- ifelse(PerfEval_MCAR_Data$PerfEval_Original==PerfEval_MCAR_Data$PerfEval_kNN,as.integer(1),as.integer(0))
+PerfEval_MCAR_Data$PerfEval_RF_Count <- ifelse(PerfEval_MCAR_Data$PerfEval_Original==PerfEval_MCAR_Data$PerfEval_RF,as.integer(1),as.integer(0))
+PerfEval_MCAR_Data$PerfEval_MICE_Count <- ifelse(PerfEval_MCAR_Data$PerfEval_Original==PerfEval_MCAR_Data$PerfEval_MICE,as.integer(1),as.integer(0))
+# MAR
+PerfEval_MAR_Data$PerfEval_SI_Count <- ifelse(PerfEval_MAR_Data$PerfEval_Original==PerfEval_MAR_Data$PerfEval_SI,as.integer(1),as.integer(0))
+PerfEval_MAR_Data$PerfEval_kNN_Count <- ifelse(PerfEval_MAR_Data$PerfEval_Original==PerfEval_MAR_Data$PerfEval_kNN,as.integer(1),as.integer(0))
+PerfEval_MAR_Data$PerfEval_RF_Count <- ifelse(PerfEval_MAR_Data$PerfEval_Original==PerfEval_MAR_Data$PerfEval_RF,as.integer(1),as.integer(0))
+PerfEval_MAR_Data$PerfEval_MICE_Count <- ifelse(PerfEval_MAR_Data$PerfEval_Original==PerfEval_MAR_Data$PerfEval_MICE,as.integer(1),as.integer(0))
+# MNAR
+PerfEval_MNAR_Data$PerfEval_SI_Count <- ifelse(PerfEval_MNAR_Data$PerfEval_Original==PerfEval_MNAR_Data$PerfEval_SI,as.integer(1),as.integer(0))
+PerfEval_MNAR_Data$PerfEval_kNN_Count <- ifelse(PerfEval_MNAR_Data$PerfEval_Original==PerfEval_MNAR_Data$PerfEval_kNN,as.integer(1),as.integer(0))
+PerfEval_MNAR_Data$PerfEval_RF_Count <- ifelse(PerfEval_MNAR_Data$PerfEval_Original==PerfEval_MNAR_Data$PerfEval_RF,as.integer(1),as.integer(0))
+PerfEval_MNAR_Data$PerfEval_MICE_Count <- ifelse(PerfEval_MNAR_Data$PerfEval_Original==PerfEval_MNAR_Data$PerfEval_MICE,as.integer(1),as.integer(0))
+# Compute Percent of Error for PerfEval
+# MCAR Error Percentage
+Theor_MCAR <- nrow(PerfEval_MCAR_Data)
+PerfEval_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(PerfEval_MCAR_Data$PerfEval_SI_Count==1)))/Theor_MCAR*100
+PerfEval_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(PerfEval_MCAR_Data$PerfEval_kNN_Count==1)))/Theor_MCAR*100
+PerfEval_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(PerfEval_MCAR_Data$PerfEval_RF_Count==1)))/Theor_MCAR*100
+PerfEval_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(PerfEval_MCAR_Data$PerfEval_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(PerfEval_MAR_Data)
+PerfEval_MAR_SI_Err   <- abs(Theor_MAR-length(which(PerfEval_MAR_Data$PerfEval_SI_Count==1)))/Theor_MAR*100
+PerfEval_MAR_kNN_Err  <- abs(Theor_MAR-length(which(PerfEval_MAR_Data$PerfEval_kNN_Count==1)))/Theor_MAR*100
+PerfEval_MAR_RF_Err   <- abs(Theor_MAR-length(which(PerfEval_MAR_Data$PerfEval_RF_Count==1)))/Theor_MAR*100
+PerfEval_MAR_MICE_Err <- abs(Theor_MAR-length(which(PerfEval_MAR_Data$PerfEval_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(PerfEval_MNAR_Data)
+PerfEval_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(PerfEval_MNAR_Data$PerfEval_SI_Count==1)))/Theor_MNAR*100
+PerfEval_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(PerfEval_MNAR_Data$PerfEval_kNN_Count==1)))/Theor_MNAR*100
+PerfEval_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(PerfEval_MNAR_Data$PerfEval_RF_Count==1)))/Theor_MNAR*100
+PerfEval_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(PerfEval_MNAR_Data$PerfEval_MICE_Count==1)))/Theor_MNAR*100
+PerfEval_Error <- data.frame(SI_Error = c(PerfEval_MCAR_SI_Err, PerfEval_MAR_SI_Err, PerfEval_MNAR_SI_Err),
+                              kNN_Error = c(PerfEval_MCAR_kNN_Err, PerfEval_MAR_kNN_Err, PerfEval_MAR_kNN_Err),
+                              RF_Error = c(PerfEval_MCAR_RF_Err, PerfEval_MAR_RF_Err, PerfEval_MAR_RF_Err),
+                              MICE_Error = c(PerfEval_MCAR_MICE_Err, PerfEval_MAR_MICE_Err, PerfEval_MAR_MICE_Err))
+rownames(PerfEval_Error) <- c("PerfEval_MCAR","PerfEval_MAR","PerfEval_MNAR")
+# Group Education Original and Imputed data
+Education_MCAR_Data <- tibble(Education_Original = Education_MCAR_NAs,
+                       Education_SI=dataMCAR_SI$Education[filter(index_MCAR, index_MCAR$col==5)$row],
+                       Education_kNN=dataMCAR_kNN$Education[filter(index_MCAR, index_MCAR$col==5)$row],
+                       Education_RF=dataMCAR_RF$ximp$Education[filter(index_MCAR, index_MCAR$col==5)$row], 
+                       Education_MICE=dataMCAR_MICE_Final$Education[filter(index_MCAR, index_MCAR$col==5)$row])
+Education_MAR_Data <- tibble(Education_Original = Education_MAR_NAs,
+                       Education_SI=dataMAR_SI$Education[filter(index_MAR, index_MAR$col==5)$row],
+                       Education_kNN=dataMAR_kNN$Education[filter(index_MAR, index_MAR$col==5)$row],
+                       Education_RF=dataMAR_RF$ximp$Education[filter(index_MAR, index_MAR$col==5)$row], 
+                       Education_MICE=dataMAR_MICE_Final$Education[filter(index_MAR, index_MAR$col==5)$row])
+Education_MNAR_Data <- tibble(Education_Original = Education_MNAR_NAs,
+                       Education_SI=dataMNAR_SI$Education[filter(index_MNAR, index_MNAR$col==5)$row],
+                       Education_kNN=dataMNAR_kNN$Education[filter(index_MNAR, index_MNAR$col==5)$row],
+                       Education_RF=dataMNAR_RF$ximp$Education[filter(index_MNAR, index_MNAR$col==5)$row], 
+                       Education_MICE=dataMNAR_MICE_Final$Education[filter(index_MNAR, index_MNAR$col==5)$row])
+# Add count variable for Education to compute error
+# MCAR
+Education_MCAR_Data$Education_SI_Count <- ifelse(Education_MCAR_Data$Education_Original==Education_MCAR_Data$Education_SI,as.integer(1),as.integer(0))
+Education_MCAR_Data$Education_kNN_Count <- ifelse(Education_MCAR_Data$Education_Original==Education_MCAR_Data$Education_kNN,as.integer(1),as.integer(0))
+Education_MCAR_Data$Education_RF_Count <- ifelse(Education_MCAR_Data$Education_Original==Education_MCAR_Data$Education_RF,as.integer(1),as.integer(0))
+Education_MCAR_Data$Education_MICE_Count <- ifelse(Education_MCAR_Data$Education_Original==Education_MCAR_Data$Education_MICE,as.integer(1),as.integer(0))
+# MAR
+Education_MAR_Data$Education_SI_Count <- ifelse(Education_MAR_Data$Education_Original==Education_MAR_Data$Education_SI,as.integer(1),as.integer(0))
+Education_MAR_Data$Education_kNN_Count <- ifelse(Education_MAR_Data$Education_Original==Education_MAR_Data$Education_kNN,as.integer(1),as.integer(0))
+Education_MAR_Data$Education_RF_Count <- ifelse(Education_MAR_Data$Education_Original==Education_MAR_Data$Education_RF,as.integer(1),as.integer(0))
+Education_MAR_Data$Education_MICE_Count <- ifelse(Education_MAR_Data$Education_Original==Education_MAR_Data$Education_MICE,as.integer(1),as.integer(0))
+# MNAR
+Education_MNAR_Data$Education_SI_Count <- ifelse(Education_MNAR_Data$Education_Original==Education_MNAR_Data$Education_SI,as.integer(1),as.integer(0))
+Education_MNAR_Data$Education_kNN_Count <- ifelse(Education_MNAR_Data$Education_Original==Education_MNAR_Data$Education_kNN,as.integer(1),as.integer(0))
+Education_MNAR_Data$Education_RF_Count <- ifelse(Education_MNAR_Data$Education_Original==Education_MNAR_Data$Education_RF,as.integer(1),as.integer(0))
+Education_MNAR_Data$Education_MICE_Count <- ifelse(Education_MNAR_Data$Education_Original==Education_MNAR_Data$Education_MICE,as.integer(1),as.integer(0))
+# Compute Percent of Error for Education
+# MCAR Error Percentage
+Theor_MCAR <- nrow(Education_MCAR_Data)
+Education_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(Education_MCAR_Data$Education_SI_Count==1)))/Theor_MCAR*100
+Education_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(Education_MCAR_Data$Education_kNN_Count==1)))/Theor_MCAR*100
+Education_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(Education_MCAR_Data$Education_RF_Count==1)))/Theor_MCAR*100
+Education_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(Education_MCAR_Data$Education_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(Education_MAR_Data)
+Education_MAR_SI_Err   <- abs(Theor_MAR-length(which(Education_MAR_Data$Education_SI_Count==1)))/Theor_MAR*100
+Education_MAR_kNN_Err  <- abs(Theor_MAR-length(which(Education_MAR_Data$Education_kNN_Count==1)))/Theor_MAR*100
+Education_MAR_RF_Err   <- abs(Theor_MAR-length(which(Education_MAR_Data$Education_RF_Count==1)))/Theor_MAR*100
+Education_MAR_MICE_Err <- abs(Theor_MAR-length(which(Education_MAR_Data$Education_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(Education_MNAR_Data)
+Education_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(Education_MNAR_Data$Education_SI_Count==1)))/Theor_MNAR*100
+Education_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(Education_MNAR_Data$Education_kNN_Count==1)))/Theor_MNAR*100
+Education_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(Education_MNAR_Data$Education_RF_Count==1)))/Theor_MNAR*100
+Education_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(Education_MNAR_Data$Education_MICE_Count==1)))/Theor_MNAR*100
+Education_Error <- data.frame(SI_Error = c(Education_MCAR_SI_Err, Education_MAR_SI_Err, Education_MNAR_SI_Err),
+                              kNN_Error = c(Education_MCAR_kNN_Err, Education_MAR_kNN_Err, Education_MAR_kNN_Err),
+                              RF_Error = c(Education_MCAR_RF_Err, Education_MAR_RF_Err, Education_MAR_RF_Err),
+                              MICE_Error = c(Education_MCAR_MICE_Err, Education_MAR_MICE_Err, Education_MAR_MICE_Err))
+rownames(Education_Error) <- c("Education_MCAR","Education_MAR","Education_MNAR")
+# Group Dept Original and Imputed data
+Dept_MCAR_Data <- tibble(Dept_Original = Dept_MCAR_NAs,
+                       Dept_SI=dataMCAR_SI$Dept[filter(index_MCAR, index_MCAR$col==6)$row],
+                       Dept_kNN=dataMCAR_kNN$Dept[filter(index_MCAR, index_MCAR$col==6)$row],
+                       Dept_RF=dataMCAR_RF$ximp$Dept[filter(index_MCAR, index_MCAR$col==6)$row], 
+                       Dept_MICE=dataMCAR_MICE_Final$Dept[filter(index_MCAR, index_MCAR$col==6)$row])
+Dept_MAR_Data <- tibble(Dept_Original = Dept_MAR_NAs,
+                       Dept_SI=dataMAR_SI$Dept[filter(index_MAR, index_MAR$col==6)$row],
+                       Dept_kNN=dataMAR_kNN$Dept[filter(index_MAR, index_MAR$col==6)$row],
+                       Dept_RF=dataMAR_RF$ximp$Dept[filter(index_MAR, index_MAR$col==6)$row], 
+                       Dept_MICE=dataMAR_MICE_Final$Dept[filter(index_MAR, index_MAR$col==6)$row])
+Dept_MNAR_Data <- tibble(Dept_Original = Dept_MNAR_NAs,
+                       Dept_SI=dataMNAR_SI$Dept[filter(index_MNAR, index_MNAR$col==6)$row],
+                       Dept_kNN=dataMNAR_kNN$Dept[filter(index_MNAR, index_MNAR$col==6)$row],
+                       Dept_RF=dataMNAR_RF$ximp$Dept[filter(index_MNAR, index_MNAR$col==6)$row], 
+                       Dept_MICE=dataMNAR_MICE_Final$Dept[filter(index_MNAR, index_MNAR$col==6)$row])
+# Add count variable for Dept to compute error
+# MCAR
+Dept_MCAR_Data$Dept_SI_Count <- ifelse(Dept_MCAR_Data$Dept_Original==Dept_MCAR_Data$Dept_SI,as.integer(1),as.integer(0))
+Dept_MCAR_Data$Dept_kNN_Count <- ifelse(Dept_MCAR_Data$Dept_Original==Dept_MCAR_Data$Dept_kNN,as.integer(1),as.integer(0))
+Dept_MCAR_Data$Dept_RF_Count <- ifelse(Dept_MCAR_Data$Dept_Original==Dept_MCAR_Data$Dept_RF,as.integer(1),as.integer(0))
+Dept_MCAR_Data$Dept_MICE_Count <- ifelse(Dept_MCAR_Data$Dept_Original==Dept_MCAR_Data$Dept_MICE,as.integer(1),as.integer(0))
+# MAR
+Dept_MAR_Data$Dept_SI_Count <- ifelse(Dept_MAR_Data$Dept_Original==Dept_MAR_Data$Dept_SI,as.integer(1),as.integer(0))
+Dept_MAR_Data$Dept_kNN_Count <- ifelse(Dept_MAR_Data$Dept_Original==Dept_MAR_Data$Dept_kNN,as.integer(1),as.integer(0))
+Dept_MAR_Data$Dept_RF_Count <- ifelse(Dept_MAR_Data$Dept_Original==Dept_MAR_Data$Dept_RF,as.integer(1),as.integer(0))
+Dept_MAR_Data$Dept_MICE_Count <- ifelse(Dept_MAR_Data$Dept_Original==Dept_MAR_Data$Dept_MICE,as.integer(1),as.integer(0))
+# MNAR
+Dept_MNAR_Data$Dept_SI_Count <- ifelse(Dept_MNAR_Data$Dept_Original==Dept_MNAR_Data$Dept_SI,as.integer(1),as.integer(0))
+Dept_MNAR_Data$Dept_kNN_Count <- ifelse(Dept_MNAR_Data$Dept_Original==Dept_MNAR_Data$Dept_kNN,as.integer(1),as.integer(0))
+Dept_MNAR_Data$Dept_RF_Count <- ifelse(Dept_MNAR_Data$Dept_Original==Dept_MNAR_Data$Dept_RF,as.integer(1),as.integer(0))
+Dept_MNAR_Data$Dept_MICE_Count <- ifelse(Dept_MNAR_Data$Dept_Original==Dept_MNAR_Data$Dept_MICE,as.integer(1),as.integer(0))
+# Compute Percent of Error for Dept
+# MCAR Error Percentage
+Theor_MCAR <- nrow(Dept_MCAR_Data)
+Dept_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(Dept_MCAR_Data$Dept_SI_Count==1)))/Theor_MCAR*100
+Dept_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(Dept_MCAR_Data$Dept_kNN_Count==1)))/Theor_MCAR*100
+Dept_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(Dept_MCAR_Data$Dept_RF_Count==1)))/Theor_MCAR*100
+Dept_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(Dept_MCAR_Data$Dept_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(Dept_MAR_Data)
+Dept_MAR_SI_Err   <- abs(Theor_MAR-length(which(Dept_MAR_Data$Dept_SI_Count==1)))/Theor_MAR*100
+Dept_MAR_kNN_Err  <- abs(Theor_MAR-length(which(Dept_MAR_Data$Dept_kNN_Count==1)))/Theor_MAR*100
+Dept_MAR_RF_Err   <- abs(Theor_MAR-length(which(Dept_MAR_Data$Dept_RF_Count==1)))/Theor_MAR*100
+Dept_MAR_MICE_Err <- abs(Theor_MAR-length(which(Dept_MAR_Data$Dept_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(Dept_MNAR_Data)
+Dept_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(Dept_MNAR_Data$Dept_SI_Count==1)))/Theor_MNAR*100
+Dept_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(Dept_MNAR_Data$Dept_kNN_Count==1)))/Theor_MNAR*100
+Dept_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(Dept_MNAR_Data$Dept_RF_Count==1)))/Theor_MNAR*100
+Dept_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(Dept_MNAR_Data$Dept_MICE_Count==1)))/Theor_MNAR*100
+Dept_Error <- data.frame(SI_Error = c(Dept_MCAR_SI_Err, Dept_MAR_SI_Err, Dept_MNAR_SI_Err),
+                              kNN_Error = c(Dept_MCAR_kNN_Err, Dept_MAR_kNN_Err, Dept_MAR_kNN_Err),
+                              RF_Error = c(Dept_MCAR_RF_Err, Dept_MAR_RF_Err, Dept_MAR_RF_Err),
+                              MICE_Error = c(Dept_MCAR_MICE_Err, Dept_MAR_MICE_Err, Dept_MAR_MICE_Err))
+rownames(Dept_Error) <- c("Dept_MCAR","Dept_MAR","Dept_MNAR")
+# Group Seniority Original and Imputed data
+Seniority_MCAR_Data <- tibble(Seniority_Original = Seniority_MCAR_NAs,
+                       Seniority_SI=dataMCAR_SI$Seniority[filter(index_MCAR, index_MCAR$col==7)$row],
+                       Seniority_kNN=dataMCAR_kNN$Seniority[filter(index_MCAR, index_MCAR$col==7)$row],
+                       Seniority_RF=dataMCAR_RF$ximp$Seniority[filter(index_MCAR, index_MCAR$col==7)$row], 
+                       Seniority_MICE=dataMCAR_MICE_Final$Seniority[filter(index_MCAR, index_MCAR$col==7)$row])
+Seniority_MAR_Data <- tibble(Seniority_Original = Seniority_MAR_NAs,
+                       Seniority_SI=dataMAR_SI$Seniority[filter(index_MAR, index_MAR$col==7)$row],
+                       Seniority_kNN=dataMAR_kNN$Seniority[filter(index_MAR, index_MAR$col==7)$row],
+                       Seniority_RF=dataMAR_RF$ximp$Seniority[filter(index_MAR, index_MAR$col==7)$row], 
+                       Seniority_MICE=dataMAR_MICE_Final$Seniority[filter(index_MAR, index_MAR$col==7)$row])
+Seniority_MNAR_Data <- tibble(Seniority_Original = Seniority_MNAR_NAs,
+                       Seniority_SI=dataMNAR_SI$Seniority[filter(index_MNAR, index_MNAR$col==7)$row],
+                       Seniority_kNN=dataMNAR_kNN$Seniority[filter(index_MNAR, index_MNAR$col==7)$row],
+                       Seniority_RF=dataMNAR_RF$ximp$Seniority[filter(index_MNAR, index_MNAR$col==7)$row], 
+                       Seniority_MICE=dataMNAR_MICE_Final$Seniority[filter(index_MNAR, index_MNAR$col==7)$row])
+# Add count variable for Seniority to compute error
+# MCAR
+Seniority_MCAR_Data$Seniority_SI_Count <- ifelse(Seniority_MCAR_Data$Seniority_Original==Seniority_MCAR_Data$Seniority_SI,as.integer(1),as.integer(0))
+Seniority_MCAR_Data$Seniority_kNN_Count <- ifelse(Seniority_MCAR_Data$Seniority_Original==Seniority_MCAR_Data$Seniority_kNN,as.integer(1),as.integer(0))
+Seniority_MCAR_Data$Seniority_RF_Count <- ifelse(Seniority_MCAR_Data$Seniority_Original==Seniority_MCAR_Data$Seniority_RF,as.integer(1),as.integer(0))
+Seniority_MCAR_Data$Seniority_MICE_Count <- ifelse(Seniority_MCAR_Data$Seniority_Original==Seniority_MCAR_Data$Seniority_MICE,as.integer(1),as.integer(0))
+# MAR
+Seniority_MAR_Data$Seniority_SI_Count <- ifelse(Seniority_MAR_Data$Seniority_Original==Seniority_MAR_Data$Seniority_SI,as.integer(1),as.integer(0))
+Seniority_MAR_Data$Seniority_kNN_Count <- ifelse(Seniority_MAR_Data$Seniority_Original==Seniority_MAR_Data$Seniority_kNN,as.integer(1),as.integer(0))
+Seniority_MAR_Data$Seniority_RF_Count <- ifelse(Seniority_MAR_Data$Seniority_Original==Seniority_MAR_Data$Seniority_RF,as.integer(1),as.integer(0))
+Seniority_MAR_Data$Seniority_MICE_Count <- ifelse(Seniority_MAR_Data$Seniority_Original==Seniority_MAR_Data$Seniority_MICE,as.integer(1),as.integer(0))
+# MNAR
+Seniority_MNAR_Data$Seniority_SI_Count <- ifelse(Seniority_MNAR_Data$Seniority_Original==Seniority_MNAR_Data$Seniority_SI,as.integer(1),as.integer(0))
+Seniority_MNAR_Data$Seniority_kNN_Count <- ifelse(Seniority_MNAR_Data$Seniority_Original==Seniority_MNAR_Data$Seniority_kNN,as.integer(1),as.integer(0))
+Seniority_MNAR_Data$Seniority_RF_Count <- ifelse(Seniority_MNAR_Data$Seniority_Original==Seniority_MNAR_Data$Seniority_RF,as.integer(1),as.integer(0))
+Seniority_MNAR_Data$Seniority_MICE_Count <- ifelse(Seniority_MNAR_Data$Seniority_Original==Seniority_MNAR_Data$Seniority_MICE,as.integer(1),as.integer(0))
+# Seniority Error
+# MCAR Error Percentage
+Theor_MCAR <- nrow(Seniority_MCAR_Data)
+Seniority_MCAR_SI_Err   <- abs(Theor_MCAR-length(which(Seniority_MCAR_Data$Seniority_SI_Count==1)))/Theor_MCAR*100
+Seniority_MCAR_kNN_Err  <- abs(Theor_MCAR-length(which(Seniority_MCAR_Data$Seniority_kNN_Count==1)))/Theor_MCAR*100
+Seniority_MCAR_RF_Err   <- abs(Theor_MCAR-length(which(Seniority_MCAR_Data$Seniority_RF_Count==1)))/Theor_MCAR*100
+Seniority_MCAR_MICE_Err <- abs(Theor_MCAR-length(which(Seniority_MCAR_Data$Seniority_MICE_Count==1)))/Theor_MCAR*100
+# MAR Error Percentage
+Theor_MAR <- nrow(Seniority_MAR_Data)
+Seniority_MAR_SI_Err   <- abs(Theor_MAR-length(which(Seniority_MAR_Data$Seniority_SI_Count==1)))/Theor_MAR*100
+Seniority_MAR_kNN_Err  <- abs(Theor_MAR-length(which(Seniority_MAR_Data$Seniority_kNN_Count==1)))/Theor_MAR*100
+Seniority_MAR_RF_Err   <- abs(Theor_MAR-length(which(Seniority_MAR_Data$Seniority_RF_Count==1)))/Theor_MAR*100
+Seniority_MAR_MICE_Err <- abs(Theor_MAR-length(which(Seniority_MAR_Data$Seniority_MICE_Count==1)))/Theor_MAR*100
+# MNAR Error Percentage
+Theor_MNAR <- nrow(Seniority_MNAR_Data)
+Seniority_MNAR_SI_Err   <- abs(Theor_MNAR-length(which(Seniority_MNAR_Data$Seniority_SI_Count==1)))/Theor_MNAR*100
+Seniority_MNAR_kNN_Err  <- abs(Theor_MNAR-length(which(Seniority_MNAR_Data$Seniority_kNN_Count==1)))/Theor_MNAR*100
+Seniority_MNAR_RF_Err   <- abs(Theor_MNAR-length(which(Seniority_MNAR_Data$Seniority_RF_Count==1)))/Theor_MNAR*100
+Seniority_MNAR_MICE_Err <- abs(Theor_MNAR-length(which(Seniority_MNAR_Data$Seniority_MICE_Count==1)))/Theor_MNAR*100
+Seniority_Error <- data.frame(SI_Error = c(Seniority_MCAR_SI_Err, Seniority_MAR_SI_Err, Seniority_MNAR_SI_Err),
+                              kNN_Error = c(Seniority_MCAR_kNN_Err, Seniority_MAR_kNN_Err, Seniority_MAR_kNN_Err),
+                              RF_Error = c(Seniority_MCAR_RF_Err, Seniority_MAR_RF_Err, Seniority_MAR_RF_Err),
+                              MICE_Error = c(Seniority_MCAR_MICE_Err, Seniority_MAR_MICE_Err, Seniority_MAR_MICE_Err))
+rownames(Seniority_Error) <- c("Seniority_MCAR","Seniority_MAR","Seniority_MNAR")
+# Group BasePay Original and Imputed data
+BasePay_MCAR_Data <- tibble(BasePay_Original = BasePay_MCAR_NAs,
+                       BasePay_SI=dataMCAR_SI$BasePay[filter(index_MCAR, index_MCAR$col==8)$row],
+                       BasePay_kNN=dataMCAR_kNN$BasePay[filter(index_MCAR, index_MCAR$col==8)$row],
+                       BasePay_RF=dataMCAR_RF$ximp$BasePay[filter(index_MCAR, index_MCAR$col==8)$row], 
+                       BasePay_MICE=dataMCAR_MICE_Final$BasePay[filter(index_MCAR, index_MCAR$col==8)$row])
+BasePay_MAR_Data <- tibble(BasePay_Original = BasePay_MAR_NAs,
+                       BasePay_SI=dataMAR_SI$BasePay[filter(index_MAR, index_MAR$col==8)$row],
+                       BasePay_kNN=dataMAR_kNN$BasePay[filter(index_MAR, index_MAR$col==8)$row],
+                       BasePay_RF=dataMAR_RF$ximp$BasePay[filter(index_MAR, index_MAR$col==8)$row], 
+                       BasePay_MICE=dataMAR_MICE_Final$BasePay[filter(index_MAR, index_MAR$col==8)$row])
+BasePay_MNAR_Data <- tibble(BasePay_Original = BasePay_MNAR_NAs,
+                       BasePay_SI=dataMNAR_SI$BasePay[filter(index_MNAR, index_MNAR$col==8)$row],
+                       BasePay_kNN=dataMNAR_kNN$BasePay[filter(index_MNAR, index_MNAR$col==8)$row],
+                       BasePay_RF=dataMNAR_RF$ximp$BasePay[filter(index_MNAR, index_MNAR$col==8)$row], 
+                       BasePay_MICE=dataMNAR_MICE_Final$BasePay[filter(index_MNAR, index_MNAR$col==8)$row])
+# Compute Percent of Error for BasePay
+# MCAR Error PercentBasePay
+BasePay_MCAR_Error <- tibble(BasePay_SI_Error=abs(BasePay_MCAR_Data$BasePay_Original-BasePay_MCAR_Data$BasePay_SI)/BasePay_MCAR_Data$BasePay_Original*100,
+                             BasePay_kNN_Error=abs(BasePay_MCAR_Data$BasePay_Original-BasePay_MCAR_Data$BasePay_kNN)/BasePay_MCAR_Data$BasePay_Original*100,
+                             BasePay_RF_Error=abs(BasePay_MCAR_Data$BasePay_Original-BasePay_MCAR_Data$BasePay_RF)/BasePay_MCAR_Data$BasePay_Original*100,
+                             BasePay_MICE_Error=abs(BasePay_MCAR_Data$BasePay_Original-BasePay_MCAR_Data$BasePay_MICE)/BasePay_MCAR_Data$BasePay_Original*100)
+# MAR Error PercentBasePay
+BasePay_MAR_Error <- tibble(BasePay_SI_Error=abs(BasePay_MAR_Data$BasePay_Original-BasePay_MAR_Data$BasePay_SI)/BasePay_MAR_Data$BasePay_Original*100,
+                             BasePay_kNN_Error=abs(BasePay_MAR_Data$BasePay_Original-BasePay_MAR_Data$BasePay_kNN)/BasePay_MAR_Data$BasePay_Original*100,
+                             BasePay_RF_Error=abs(BasePay_MAR_Data$BasePay_Original-BasePay_MAR_Data$BasePay_RF)/BasePay_MAR_Data$BasePay_Original*100,
+                             BasePay_MICE_Error=abs(BasePay_MAR_Data$BasePay_Original-BasePay_MAR_Data$BasePay_MICE)/BasePay_MAR_Data$BasePay_Original*100)
+# MNAR Error PercentBasePay
+BasePay_MNAR_Error <- tibble(BasePay_SI_Error=abs(BasePay_MNAR_Data$BasePay_Original-BasePay_MNAR_Data$BasePay_SI)/BasePay_MNAR_Data$BasePay_Original*100,
+                             BasePay_kNN_Error=abs(BasePay_MNAR_Data$BasePay_Original-BasePay_MNAR_Data$BasePay_kNN)/BasePay_MNAR_Data$BasePay_Original*100,
+                             BasePay_RF_Error=abs(BasePay_MNAR_Data$BasePay_Original-BasePay_MNAR_Data$BasePay_RF)/BasePay_MNAR_Data$BasePay_Original*100,
+                             BasePay_MICE_Error=abs(BasePay_MNAR_Data$BasePay_Original-BasePay_MNAR_Data$BasePay_MICE)/BasePay_MNAR_Data$BasePay_Original*100)
+BasePay_Error <- data.frame(
+  SI_Error   = c(mean(BasePay_MCAR_Error$BasePay_SI_Error)  , mean(BasePay_MAR_Error$BasePay_SI_Error)  , mean(BasePay_MNAR_Error$BasePay_SI_Error)),
+  kNN_Error  = c(mean(BasePay_MCAR_Error$BasePay_kNN_Error) , mean(BasePay_MAR_Error$BasePay_kNN_Error) , mean(BasePay_MNAR_Error$BasePay_kNN_Error)),
+  RF_Error   = c(mean(BasePay_MCAR_Error$BasePay_RF_Error)  , mean(BasePay_MAR_Error$BasePay_RF_Error)  , mean(BasePay_MNAR_Error$BasePay_RF_Error)),
+  MICE_Error = c(mean(BasePay_MCAR_Error$BasePay_MICE_Error), mean(BasePay_MAR_Error$BasePay_MICE_Error), mean(BasePay_MNAR_Error$BasePay_MICE_Error)))
+rownames(BasePay_Error) <- c("BasePay_MCAR","BasePay_MAR","BasePay_MNAR")
+# Group Bonus Original and Imputed data
+Bonus_MCAR_Data <- tibble(Bonus_Original = Bonus_MCAR_NAs,
+                       Bonus_SI=dataMCAR_SI$Bonus[filter(index_MCAR, index_MCAR$col==9)$row],
+                       Bonus_kNN=dataMCAR_kNN$Bonus[filter(index_MCAR, index_MCAR$col==9)$row],
+                       Bonus_RF=dataMCAR_RF$ximp$Bonus[filter(index_MCAR, index_MCAR$col==9)$row], 
+                       Bonus_MICE=dataMCAR_MICE_Final$Bonus[filter(index_MCAR, index_MCAR$col==9)$row])
+Bonus_MAR_Data <- tibble(Bonus_Original = Bonus_MAR_NAs,
+                       Bonus_SI=dataMAR_SI$Bonus[filter(index_MAR, index_MAR$col==9)$row],
+                       Bonus_kNN=dataMAR_kNN$Bonus[filter(index_MAR, index_MAR$col==9)$row],
+                       Bonus_RF=dataMAR_RF$ximp$Bonus[filter(index_MAR, index_MAR$col==9)$row], 
+                       Bonus_MICE=dataMAR_MICE_Final$Bonus[filter(index_MAR, index_MAR$col==9)$row])
+Bonus_MNAR_Data <- tibble(Bonus_Original = Bonus_MNAR_NAs,
+                       Bonus_SI=dataMNAR_SI$Bonus[filter(index_MNAR, index_MNAR$col==9)$row],
+                       Bonus_kNN=dataMNAR_kNN$Bonus[filter(index_MNAR, index_MNAR$col==9)$row],
+                       Bonus_RF=dataMNAR_RF$ximp$Bonus[filter(index_MNAR, index_MNAR$col==9)$row], 
+                       Bonus_MICE=dataMNAR_MICE_Final$Bonus[filter(index_MNAR, index_MNAR$col==9)$row])
+# Compute Percent of Error for Bonus
+# MCAR Error PercentBonus
+Bonus_MCAR_Error <- tibble(Bonus_SI_Error=abs(Bonus_MCAR_Data$Bonus_Original-Bonus_MCAR_Data$Bonus_SI)/Bonus_MCAR_Data$Bonus_Original*100,
+                             Bonus_kNN_Error=abs(Bonus_MCAR_Data$Bonus_Original-Bonus_MCAR_Data$Bonus_kNN)/Bonus_MCAR_Data$Bonus_Original*100,
+                             Bonus_RF_Error=abs(Bonus_MCAR_Data$Bonus_Original-Bonus_MCAR_Data$Bonus_RF)/Bonus_MCAR_Data$Bonus_Original*100,
+                             Bonus_MICE_Error=abs(Bonus_MCAR_Data$Bonus_Original-Bonus_MCAR_Data$Bonus_MICE)/Bonus_MCAR_Data$Bonus_Original*100)
+# MAR Error PercentBonus
+Bonus_MAR_Error <- tibble(Bonus_SI_Error=abs(Bonus_MAR_Data$Bonus_Original-Bonus_MAR_Data$Bonus_SI)/Bonus_MAR_Data$Bonus_Original*100,
+                             Bonus_kNN_Error=abs(Bonus_MAR_Data$Bonus_Original-Bonus_MAR_Data$Bonus_kNN)/Bonus_MAR_Data$Bonus_Original*100,
+                             Bonus_RF_Error=abs(Bonus_MAR_Data$Bonus_Original-Bonus_MAR_Data$Bonus_RF)/Bonus_MAR_Data$Bonus_Original*100,
+                             Bonus_MICE_Error=abs(Bonus_MAR_Data$Bonus_Original-Bonus_MAR_Data$Bonus_MICE)/Bonus_MAR_Data$Bonus_Original*100)
+# MNAR Error PercentBonus
+Bonus_MNAR_Error <- tibble(Bonus_SI_Error=abs(Bonus_MNAR_Data$Bonus_Original-Bonus_MNAR_Data$Bonus_SI)/Bonus_MNAR_Data$Bonus_Original*100,
+                             Bonus_kNN_Error=abs(Bonus_MNAR_Data$Bonus_Original-Bonus_MNAR_Data$Bonus_kNN)/Bonus_MNAR_Data$Bonus_Original*100,
+                             Bonus_RF_Error=abs(Bonus_MNAR_Data$Bonus_Original-Bonus_MNAR_Data$Bonus_RF)/Bonus_MNAR_Data$Bonus_Original*100,
+                             Bonus_MICE_Error=abs(Bonus_MNAR_Data$Bonus_Original-Bonus_MNAR_Data$Bonus_MICE)/Bonus_MNAR_Data$Bonus_Original*100)
+Bonus_Error <- data.frame(
+  SI_Error   = c(mean(Bonus_MCAR_Error$Bonus_SI_Error)  , mean(Bonus_MAR_Error$Bonus_SI_Error)  , mean(Bonus_MNAR_Error$Bonus_SI_Error)),
+  kNN_Error  = c(mean(Bonus_MCAR_Error$Bonus_kNN_Error) , mean(Bonus_MAR_Error$Bonus_kNN_Error) , mean(Bonus_MNAR_Error$Bonus_kNN_Error)),
+  RF_Error   = c(mean(Bonus_MCAR_Error$Bonus_RF_Error)  , mean(Bonus_MAR_Error$Bonus_RF_Error)  , mean(Bonus_MNAR_Error$Bonus_RF_Error)),
+  MICE_Error = c(mean(Bonus_MCAR_Error$Bonus_MICE_Error), mean(Bonus_MAR_Error$Bonus_MICE_Error), mean(Bonus_MNAR_Error$Bonus_MICE_Error)))
+rownames(Bonus_Error) <- c("Bonus_MCAR","Bonus_MAR","Bonus_MNAR")
+# Tabulate Errors
+Errors_by_Variable <- rbind(JobTitle_Error, Gender_Error, Age_Error, PerfEval_Error, Education_Error, Dept_Error, Seniority_Error, BasePay_Error, Bonus_Error)
+Errors_by_Variable
+Errors_by_Type <- rbind(JobTitle_Error[1,], Gender_Error[1,], Age_Error[1,], PerfEval_Error[1,], Education_Error[1,], Dept_Error[1,], Seniority_Error[1,], BasePay_Error[1,], Bonus_Error[1,],
+                 JobTitle_Error[2,], Gender_Error[2,], Age_Error[2,], PerfEval_Error[2,], Education_Error[2,], Dept_Error[2,], Seniority_Error[2,], BasePay_Error[2,], Bonus_Error[2,],
+                 
+                 JobTitle_Error[3,], Gender_Error[3,], Age_Error[3,], PerfEval_Error[3,], Education_Error[3,], Dept_Error[3,], Seniority_Error[3,], BasePay_Error[3,], Bonus_Error[3,])
+Errors_by_Type
+
+# Error Visualization
+
+# Melt data frame into long format
+Errors_by_Type_Long = rownames_to_column(Errors_by_Type, "ErrorName")
+Errors_by_Type_Long <- melt(Errors_by_Type_Long, id.vars = 'ErrorName', variable.name = 'ImputationType',value.name = "ErrorPercent")
+
+Errors_by_Variable_Long = rownames_to_column(Errors_by_Variable, "ErrorName")
+Errors_by_Variable_Long <- melt(Errors_by_Variable_Long, id.vars = 'ErrorName', variable.name = 'ImputationType',value.name = "ErrorPercent")
+
+#create line plot for each column in data frame
+df = Errors_by_Variable_Long[c(1:9,28:36,55:63,82:90),]
+p1 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Overview of Errors")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("Age|BasePay|Bonus"),ErrorName))
+p2 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Continuous Variables")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("Gender"),ErrorName))
+p3 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Binary Categorical Variables")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("JobTitle|Dept"),ErrorName))
+p4 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Multinomial Categorical Variables")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("PerEval|Education|Seniority"),ErrorName))
+p5 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Ordinal Categorical Variables")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl("MCAR",ErrorName))
+p6 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison for MCAR Type of Missing Data")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl("MAR",ErrorName))
+p7 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison for MAR Type of Missing Data")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl("MNAR",ErrorName))
+p8 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison for MNAR Type of Missing Data")
+
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("kNN_Error|RF_Error|MICE_Error"),ImputationType))
+p9 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Random Forest and MICE Imputation Methods")
+```
+
+## Introduction
+
+Data is becoming more integrated into our society and decision-making process. The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. Real world data is usually incomplete with missing data.
+
+## Problem Statement
+
+Original solutions such as listwise deletion or univariate imputation of the mean create bais and inaccurate results. Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods.
+
+## Types of Missing Data
+
+- **MCAR (Missing Completely at Random)** is the data missing where data points are not related to each other and probability of missing data is equal for every data point.
+
+- **MAR (Missing at Random)** is the likelihood of a value to be missing depends on other observed variables.
+
+- **MNAR (Missing Not at Random)** is unequal and unknown probability to be missing for a dataset.
+
+## Solutions for Missing Data Types
+
+- **MCAR (Missing Completely at Random)** is unbiased missing data and allows methods such as complete case analysis, single, and multiple imputation for valid analysis.
+
+- **MAR (Missing at Random)** is missing data values that have dependency on other observed variables. For this data type we can use multiple imputation.
+
+- **MNAR (Missing Not at Random)** data is missing and we are unaware of this missing data type. For this data type, sensitivity analysis is preferred.
+
+## Terminology
+
+- **Imputation** Process of replacing a missing value with another value.
+
+- **Complete Cases (Listwise Deletion)** Only use complete observations in analysis. If an observation is missing data, delete the observation.
+
+- **Univariate Imputation** is single variable imputation. Depending on variable type mean, median, frequency imputations are used.
+
+- **Ampute** the ampute() function generates multivariate missing data under a MCAR, MAR, or MNAR missing data mechanism.
+
+## Dataset
+
+- Found on Kaggle and produced by data from Glassdoor.
+
+- Focuses on compensation data between men and women.
+
+- Was constructed in efforts to aid testing the pay gap between men and women. 
+
+- Has 9 variables with 1000 observations. 
+    - Variables: Job Title, Gender, Age, Performance Evaluation, Education, Department, Seniority, Base Pay, Bonus
+
+## Visualization of Dataset
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+hist(data)
+```
+
+## Generating Missing Data
+
+- In order to generate missing variables for each of the types, we used the ampute function from the mice package.
+
+- For each missing type, 20% of the data set was turned into NA values with respect to it's type.
+
+## Visualization of Missing Data (MCAR)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+vis_miss(dataMCAR)
+```
+
+## Visualization of Missing Data (MAR)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+vis_miss(dataMAR)
+```
+
+## Visualization of Missing Data (MNAR)
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+vis_miss(dataMNAR)
+```
+
+## Methods
+
+- **Single Imputation** replacing a missing value with a single value usually in the form of a single variables mean, median, for frequency.
+
+- **kNN Imputation** makes predictions about missing values by finding the K's closest neighbors and impute the value based on the neighborhood.
+
+- **Random Forest Imputation** an iterative imputation method based on a random forest allows quality and flexibility utilizing built-in out-of-bag error estimates.
+
+- **MICE Imputation** involves filling the missing values multiple times until a certain threshold is met.
+
+## Percent Error Calculation
+
+- The calculation being used to produce Error is:
+
+$Error = \frac{|Theoretical-Experimental|}{Experimental}*100$
+
+## Single Imputation
+
+### Overview 
+- Replaces missing values with mean, median or most frequent value within the variable depending on the type
+
+	  i) Continuous Variables: Mean, Median
+
+	  ii) Categorical Variables: Most Frequent
+
+### Outcome
+- Very easy and fast to compute
+
+- Does not factor correlation between variables and can introduce bias to the data set.
+
+## Visualization of Single Imputation Error
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("SI_Error"),ImputationType))
+p10 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Single Imputation Methods")
+print(p10)
+```
+
+## kNN Imputation
+
+### Overview 
+
+- Algorithm creates a basic mean impute to construct a KDTree, which finds the nearest neighbor and then finds the average of KNN's
+
+- Find the kth closest neighbor and imputes based on that value.
+
+
+### Outcome
+
+- Has an advantage of being more accurate.
+
+- Computationally expensive and is very sensitive to outliers.
+
+## Visualization kNN Imputation Error
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("kNN_Error"),ImputationType))
+p11 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between kNN Imputation Methods")
+print(p11)
+```
+
+## Random Forest Imputation
+
+### Overview 
+
+- An iterative imputation method based on random forest.
+
+- Allows quality and flexibility utilizing built-in out-of-bag error estimates
+
+- Can be used on mixed types of data with ability to account for high-dimensions and different types of variables simultaneously.
+
+
+### Outcome
+
+- Flexible and accounts for mixed variables.
+
+- Computationally expensive, especially with sufficiently small data sets which may be unnecessary.
+
+## Visualization Random Forest Imputation Error
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("RF_Error"),ImputationType))
+p12 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between Random Forest Imputation Methods")
+print(p12)
+```
+
+## MICE Imputation
+
+### Overview 
+
+- Fills values multiple times until a threshold is met.
+
+- Assumes missing values are MAR (Missing at Random)
+
+- Uses different models depending on type of variable. Ex:
+
+		i) Linear Regression for continuous variables.
+
+		ii) Logistic Regression for categorical variables.
+
+### Outcome
+
+- Unbiased estimates which provides more validity.
+
+- Does not have the same theoretical justification as other techniques.
+
+- Could result in bias if missing values are not MAR (Missing at Random).
+
+## Visualization Mice Imputation Error
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+df = dplyr::filter(Errors_by_Variable_Long, grepl(c("MICE_Error"),ImputationType))
+p13 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
+  geom_bar(stat = "identity", position = "dodge2") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Error Comparison between MICE Imputation Methods")
+print(p13)
+```
+
+## Results
+
+```{r, echo=FALSE}
+# Plotting Errors
+p14 = ggarrange(p1, nrow = 1, ncol = 1)
+p14
+```
+
+![](/Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation){fig-align="center"}
+
+## Overview Errors
+
+- Continuous variables have less overall error than categorical variables.
+
+- Single Imputation is the worst performing method of imputation.
+
+- MICE is the best performing method of imputation when compared to kNN and RF imputation in our analysis.
+
+- kNN and RF had similar performance during evaluation however, RF had less error across the various types of variables.
+
+## Conclusions
+
+```{r, echo=FALSE}
+# Plotting Errors
+p15 = ggarrange(p6,p7,p8,nrow = 1, ncol = 3)
+p15
+```
+
+![](/Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation){fig-align="center"}
+
+## Error Comparison for Types of Missing Data
+
+- The expectation was for the MAR type of missing data to be the best performer in terms of least amount of error percent however, because of the smaller size of our data set, it is not as effective as it would be for a larger data set.
+- Given a larger data set the differences between our missing data types is more easily compared. The methods of imputation are designed for MAR type of missing data. 
+- MCAR missing type of data is somewhat unrealistic because you would be omitting variables without relationships to the result.
+
+## Conclusions
+
+```{r, echo=FALSE}
+# Plotting Errors
+p16 = ggarrange(p2,p3,p4,p5,nrow = 2, ncol = 2)
+p16
+```
+
+![](/Users/gabrielrivera/FinalPresentation/MissingDataAndImputationPresentation){fig-align="center"}
+
+## Error Comparison for Types of Variables
+
+- Comparisons above showcase the imputation types with respect to variable types.
+- Upper limit of errors for continuous variables is 40%, binary categorical variables is 60%, multinomial categorical variables is 100%, and ordinal categorical variables is 95%. 
+- Categorical variables error is higher because variability is based on frequency of occurrence in our data.
+- Within larger datasets this error will drop because each miss classification has less impact on total error assuming the missing data type is MAR.
+
+## References
+
+- \[1\] Papageorgiou, G., Grant, S. W., Takkenberg, J. J. M., & Mokhles, M. M. (2018). Statistical primer: How to deal with missing data in scientific research?. Interactive CardioVascular And Thoracic Surgery, 27(2), 153\--158. <https://doi.org/10.1093/icvts/ivy102>
+
+- \[2\] Azur, M. J., Stuart, E. A., Frangakis, C., & Leaf, P. J. (2011). Multiple imputation by chained equations: what is it and how does it work?. International journal of methods in psychiatric research, 20(1), 40\--49. <https://doi.org/10.1002/mpr.329>
+
+- \[3\] Badr, W. (2019). Retrieved from 6 Different Ways to Compensate for Missing Values In a Dataset (Data Imputation with examples). Towards Data Science. <https://towardsdatascience.com/6-different-ways-to-compensate-for-missing-values-data-imputation-with-examples-6022d9ca0779>
+
+- \[4\] Obadia, Y. (2017). The use of KNN for missing values. Towards Data Science. <https://towardsdatascience.com/the-use-of-knn-for-missing-values-cf33d935c637>
+
+- \[5\] Zhang, Z. (2016). Missing data imputation: Focusing on single imputation. Annals of translational medicine, 4(1). <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4716933/>
+
+
+## Questions?
