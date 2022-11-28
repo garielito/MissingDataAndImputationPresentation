@@ -758,11 +758,19 @@ p9 = ggplot(df, aes(ErrorName, ErrorPercent, fill=ImputationType)) +
 
 ## Introduction
 
-Data is becoming more integrated into our society and decision-making process. The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. Real world data is usually incomplete with missing data.
+- Data is becoming more integrated into our society and decision-making process. 
+
+- The magnitude of these decisions are hard to measure because data is used in many aspects of everyday life such as business, politics, social, etc. 
+
+- Real world data is usually incomplete with missing data.
 
 ## Problem Statement
 
-Original solutions such as listwise deletion or univariate imputation of the mean create bais and inaccurate results. Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods.
+- Original solutions such as listwise deletion or univariate imputation of the mean create bias and inaccurate results. 
+
+- Multiple imputation for missing data has emerged as the primary solution however, many considerations are needed for analysis. 
+
+- Our focus will dive into the types of missing data, introduce some methods to address missing data, and analysis of these methods.
 
 ## Types of Missing Data
 
